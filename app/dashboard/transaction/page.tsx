@@ -118,8 +118,8 @@ function TransactionContent() {
           <div className="flex items-center space-x-2">
             {transaction?.status === "success" && (
               <div className="flex flex-col items-center">
-                <CheckCircle size={40} className="text-green-600" />
-                <p className="font-semibold text-xl text-green-700">
+                <CheckCircle size={40} className="brand-text" />
+                <p className="font-semibold text-xl text-[color:var(--brand-700)]">
                   Transaction Successful
                 </p>
               </div>

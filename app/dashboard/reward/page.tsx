@@ -53,7 +53,7 @@ export default function Profile() {
         </div>
 
         {/* Earnings */}
-        <div className="mt-4 p-3 bg-green-100 text-green-700 rounded-lg text-center">
+        <div className="mt-4 p-3 bg-[color:var(--brand-100)] text-[color:var(--brand-700)] rounded-lg text-center">
           Earn up to <span className="font-bold">₦500</span> per referral!
         </div>
 

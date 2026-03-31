@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Almaleek TopUp – Instant VTU Recharge, Bills & More",
+  title: "Surplus TopUp – Instant VTU Recharge, Bills & More",
   description:
-    "Almaleek TopUp offers fast and affordable airtime, data recharge, bill payments, and more. Enjoy seamless VTU services across Nigeria.",
+    "Surplus TopUp offers fast and affordable airtime, data recharge, bill payments, and more. Enjoy seamless VTU services across Nigeria.",
   keywords: [
-    "Almaleek",
+    "Surplus",
     "VTU",
     "Airtime Recharge",
     "Data Recharge",
@@ -34,11 +34,11 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL("https://www.almaleek.com.ng/"),
   openGraph: {
-    title: "Almaleek – Instant VTU Recharge, Bills & More",
+    title: "Surplus – Instant VTU Recharge, Bills & More",
     description:
       "Fast, reliable and affordable virtual top-up (VTU) services including airtime, data, electricity, education and TV subscriptions.",
     url: "https://www.almaleek.com.ng/",
-    siteName: "Almaleek TopUp",
+    siteName: "Surplus TopUp",
     type: "website",
     locale: "en_NG",
   },

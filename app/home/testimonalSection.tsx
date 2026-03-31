@@ -8,10 +8,10 @@ export function TestimonialsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-            Trusted by thousands of users
+            Built for merchants and POS agents
           </h2>
           <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto">
-            Real feedback from people using the platform for daily top-ups and bill payments.
+            Real feedback from people using the platform to sell VTU online.
           </p>
         </div>
 
@@ -19,18 +19,18 @@ export function TestimonialsSection() {
           {[
             {
               name: "Sodiq A.",
-              role: "Reseller",
-              comment: "Fast and reliable. Deliveries are instant and the dashboard is clean.",
+              role: "POS Agent",
+              comment: "I created my store, shared my link and started earning. Customers love the fast delivery.",
             },
             {
               name: "Ada O.",
-              role: "Customer",
-              comment: "Support helped me quickly when I had an issue. Smooth experience overall.",
+              role: "Merchant",
+              comment: "The branding and pricing control is exactly what I needed. It feels like my own VTU website.",
             },
             {
               name: "Chuka I.",
-              role: "Customer",
-              comment: "Great pricing and simple checkout. I’ve recommended it to friends.",
+              role: "Reseller",
+              comment: "Transparent pricing and clean receipts. Managing sales is easier than my old manual process.",
             },
           ].map((t, idx) => {
             const initial = (t.name.trim()[0] || "U").toUpperCase()

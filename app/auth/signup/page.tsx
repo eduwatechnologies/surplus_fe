@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { signUpUser } from "@/redux/features/user/userThunk";
 import { ApButton } from "@/components/button/button";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import logo from "@/public/images/logo.png";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +16,8 @@ export default function SignUp() {
   const dispatch = useDispatch<AppDispatch>();
   const { loading } = useSelector((state: RootState) => state.auth);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tenantSlug = searchParams.get("tenant") || "";
 
   // const validationSchema = Yup.object({
   //   firstName: Yup.string().required("First name is required"),
@@ -118,6 +120,7 @@ export default function SignUp() {
             password: "",
             confirmPassword: "",
             pinCode: "",
+            tenantSlug,
           }}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
@@ -187,16 +190,16 @@ export default function SignUp() {
 
         <p className="text-center mt-4 text-sm">
           Already have an account?{" "}
-          <a href="/auth/signin" className="text-green-500 hover:underline">
+          <a href="/auth/signin" className="brand-text hover:underline">
             Sign In
           </a>
         </p>
 
-        <p className="text-center mt-6 text-sm text-green-600">
+        <p className="text-center mt-6 text-sm brand-text">
           Want to explore more?{" "}
           <Link
             href="/"
-            className="inline-block font-medium text-green-600 hover:text-blue-800 transition-colors duration-200 underline-offset-4 hover:underline"
+            className="inline-block font-medium brand-text hover:text-blue-800 transition-colors duration-200 underline-offset-4 hover:underline"
           >
             Go back home
           </Link>

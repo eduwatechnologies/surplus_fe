@@ -6,10 +6,6 @@ import * as Yup from "yup";
 import { ApTextInput } from "@/components/input/textInput";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-import {
-  getServiceVariations,
-  subscribeCable,
-} from "@/redux/features/services/serviceThunk";
 import GlobalModal from "@/components/modal/globalModal";
 import { AppDispatch, RootState } from "@/redux/store";
 import { useDispatch, useSelector } from "react-redux";

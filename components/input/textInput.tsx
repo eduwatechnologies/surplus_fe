@@ -96,7 +96,7 @@ export const ApTextInput = forwardRef<
                   ? "number"
                   : "text"
               }
-              className={`w-full h-11 rounded-md border border-gray-300 px-3 text-sm focus:border-green-300 focus:outline-none disabled:opacity-50 ${inputClassName}`}
+              className={`w-full h-11 rounded-md border border-gray-300 px-3 text-sm focus:outline-none brand-focus-border disabled:opacity-50 ${inputClassName}`}
               placeholder={placeHolder}
               disabled={disabled}
               name={name}

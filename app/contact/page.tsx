@@ -20,11 +20,11 @@ export default function ContactPage() {
           <li>Phone: +234 08162399919</li>
           <li>
             WhatsApp:{" "}
-            <a href="https://wa.me/23408162399919" className="text-green-600">
+            <a href="https://wa.me/23408162399919" className="brand-text">
               Chat with us
             </a>
           </li>
-          <li>Office: 123 Almaleek Lane, Lagos, Nigeria</li>
+          <li>Office: 123 Surplus Lane, Lagos, Nigeria</li>
         </ul>
       </main>
     </HomeLayout>

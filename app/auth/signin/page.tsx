@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "@/redux/features/user/userThunk";
 import { AppDispatch, RootState } from "@/redux/store";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ApButton } from "@/components/button/button";
 import Link from "next/link";
 import logo from "@/public/images/logo.png";
@@ -14,6 +14,8 @@ import Image from "next/image";
 
 export default function SignIn() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tenantSlug = searchParams.get("tenant") || "";
   const dispatch = useDispatch<AppDispatch>();
   const { loading, error } = useSelector((state: RootState) => state.auth);
 
@@ -36,7 +38,7 @@ export default function SignIn() {
     <div className="flex justify-center items-center ">
       <div className="bg-white/40 p-6 rounded-lg  w-full max-w-sm">
         <div className="flex justify-center mb-4">
-          <Image src={logo} alt="Almaleek logo" width={50} height={40} />
+          <Image src={logo} alt="Surplus logo" width={50} height={40} />
         </div>
         <h2 className="text-2xl font-semibold text-center mb-2">Sign In</h2>
         <p className="text-center text-sm text-gray-600 mb-6">
@@ -64,7 +66,7 @@ export default function SignIn() {
             <p className="text-right mt-2 text-sm">
               <Link
                 href="/auth/forgotPassword"
-                className="text-green-600 hover:underline"
+                className="brand-text hover:underline"
               >
                 Forgot Password?
               </Link>
@@ -82,16 +84,19 @@ export default function SignIn() {
 
         <p className="text-center mt-4 text-sm">
           Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="text-green-600 hover:underline">
+          <Link
+            href={tenantSlug ? `/auth/signup?tenant=${encodeURIComponent(tenantSlug)}` : "/auth/signup"}
+            className="brand-text hover:underline"
+          >
             Sign Up
           </Link>
         </p>
 
-        <p className="text-center mt-6 text-sm text-green-600">
+        <p className="text-center mt-6 text-sm brand-text">
           Want to explore more?{" "}
           <Link
             href="/"
-            className="inline-block font-medium text-green-600 hover:text-green-800 transition-colors duration-200 underline-offset-4 hover:underline"
+            className="inline-block font-medium brand-text hover:text-[color:var(--brand-700)] transition-colors duration-200 underline-offset-4 hover:underline"
           >
             Go back home
           </Link>

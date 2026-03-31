@@ -1,10 +1,10 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { User } from "./type";
+import { SignupPayload } from "./type";
 import axiosInstance from "@/redux/apis/common/aixosInstance";
 
 export const signUpUser = createAsyncThunk(
   "auth/signUpUser",
-  async (userData: User, { rejectWithValue }) => {
+  async (userData: SignupPayload, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.post("/auth/signup", userData);
       return response.data;
@@ -72,6 +72,20 @@ export const currentUser = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.msg || "Failed to fetch user"
+      );
+    }
+  }
+);
+
+export const fetchTenantContext = createAsyncThunk(
+  "auth/fetchTenantContext",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get("/tenants/context");
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to fetch merchant context"
       );
     }
   }

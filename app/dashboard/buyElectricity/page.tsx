@@ -8,7 +8,6 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { AppDispatch, RootState } from "@/redux/store";
 import { useDispatch, useSelector } from "react-redux";
-import { payElectricity } from "@/redux/features/services/serviceThunk";
 import GlobalModal from "@/components/modal/globalModal";
 import { ApButton } from "@/components/button/button";
 import ApHeader from "@/components/Apheader";

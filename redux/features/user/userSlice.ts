@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { currentUser, loginUser, signUpUser } from "./userThunk";
+import { currentUser, fetchTenantContext, loginUser, signUpUser } from "./userThunk";
 import { User } from "./type";
 
 // initialize userToken from local storage
@@ -8,6 +8,7 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
+  tenantContext: any | null;
   loading: boolean;
   error: string | null;
 }
@@ -16,6 +17,7 @@ const initialState: AuthState = {
   user: null,
   accessToken: null,
   refreshToken: null,
+  tenantContext: null,
   loading: false,
   error: null,
 };
@@ -28,6 +30,7 @@ const authSlice = createSlice({
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
+      state.tenantContext = null;
     },
   },
   extraReducers: (builder) => {
@@ -67,6 +70,17 @@ const authSlice = createSlice({
         state.loading = false;
       })
       .addCase(currentUser.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.loading = false;
+      })
+      .addCase(fetchTenantContext.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchTenantContext.fulfilled, (state, action: PayloadAction<any>) => {
+        state.tenantContext = action.payload?.data?.tenant || null;
+        state.loading = false;
+      })
+      .addCase(fetchTenantContext.rejected, (state, action) => {
         state.error = action.payload as string;
         state.loading = false;
       });

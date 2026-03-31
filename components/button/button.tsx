@@ -29,7 +29,7 @@ export const ApButton: React.FC<IProps> = ({
     "inline-flex items-center justify-center gap-2 text-sm font-medium px-4 py-2 rounded-md transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
     {
       // Default styles based on btnType
-      "bg-green-600 text-white hover:bg-black/90 mt-2":
+      "brand-bg text-white mt-2":
        btnType === "primary",
       "border border-black text-black hover:bg-black hover:text-white":
         btnType === "outline",

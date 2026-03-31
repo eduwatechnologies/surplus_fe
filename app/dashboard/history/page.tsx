@@ -40,9 +40,9 @@ export default function HistoryPage() {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "success":
-        return "text-green-500 bg-green-100";
-         case "refund":
-        return "text-green-500 bg-green-100";
+        return "text-[color:var(--brand-600)] bg-[color:var(--brand-100)]";
+      case "refund":
+        return "text-[color:var(--brand-600)] bg-[color:var(--brand-100)]";
       case "failed":
         return "text-red-500 bg-red-100";
       default:

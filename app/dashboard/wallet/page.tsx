@@ -73,7 +73,7 @@ export default function WalletCard() {
           .map((bank: any, index: number) => (
             <div
               key={index}
-            className="relative w-96 h-56 bg-gradient-to-r from-green-600 to-green-800 rounded-xl shadow-xl p-6 text-white"
+            className="relative w-96 h-56 brand-gradient rounded-xl shadow-xl p-6 text-white"
             >
               <div className="flex flex-col items-center justify-center">
                 <Image
@@ -100,7 +100,7 @@ export default function WalletCard() {
         {accounts?.map((acc, index) => (
           <div
             key={index}
-            className="relative w-96 h-56 bg-gradient-to-r from-green-600 to-green-800 rounded-xl shadow-xl p-6 text-white"
+            className="relative w-96 h-56 brand-gradient rounded-xl shadow-xl p-6 text-white"
           >
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">{acc.bankName}</h2>

@@ -10,9 +10,9 @@ import {
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
     case "success":
-      return "text-green-500 bg-green-100";
-      case "refund":
-      return "text-green-500 bg-green-100";
+      return "text-[color:var(--brand-600)] bg-[color:var(--brand-100)]";
+    case "refund":
+      return "text-[color:var(--brand-600)] bg-[color:var(--brand-100)]";
     case "failed":
       return "text-red-500 bg-red-100";
     default:
@@ -59,7 +59,7 @@ export default function TransactionCard({ trans }: { trans: any }) {
       {/* Amount */}
       <div className="flex items-center gap-2 text-lg font-bold text-gray-900">
         {isCredit ? (
-          <ArrowDownRight className="w-5 h-5 text-green-500" />
+          <ArrowDownRight className="w-5 h-5 brand-text" />
         ) : (
           <ArrowUpRight className="w-5 h-5 text-red-500" />
         )}

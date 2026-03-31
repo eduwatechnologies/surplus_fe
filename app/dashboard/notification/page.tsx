@@ -43,7 +43,7 @@ export default function NotificationPage() {
                     {new Date(notification?.createdAt).toLocaleString()}
                   </p>
                 </div>
-                {!notification?.read && <Check className="text-green-500" />}
+                {!notification?.read && <Check className="brand-text" />}
               </div>
             </div>
           ))

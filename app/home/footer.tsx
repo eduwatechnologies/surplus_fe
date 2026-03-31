@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Mail, MapPin, Phone } from "lucide-react"
 
 export function Footer() {
-  const [brandName, setBrandName] = useState(process.env.NEXT_PUBLIC_BRAND_NAME || "Almaleek TopUp")
+  const [brandName, setBrandName] = useState(process.env.NEXT_PUBLIC_BRAND_NAME || "Surplus TopUp")
   const [supportEmail, setSupportEmail] = useState<string | null>(null)
   const [supportPhone, setSupportPhone] = useState<string | null>(null)
 
@@ -29,19 +29,19 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold">{brandName}</h3>
             <p className="mt-3 text-sm text-slate-300 max-w-sm">
-              Fast, secure, and reliable VTU services — airtime, data, bills, and subscriptions in seconds.
+              Launch a branded VTU storefront, set your own prices, and sell to customers from your own link.
             </p>
             <div className="mt-5 space-y-2 text-sm">
               <div className="flex items-center gap-2 text-slate-200">
-                <Phone className="h-4 w-4 text-emerald-400" />
+                <Phone className="h-4 w-4 brand-icon" />
                 <span>{supportPhone || "+234 800 000 0000"}</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200">
-                <Mail className="h-4 w-4 text-emerald-400" />
+                <Mail className="h-4 w-4 brand-icon" />
                 <span>{supportEmail || "support@example.com"}</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200">
-                <MapPin className="h-4 w-4 text-emerald-400" />
+                <MapPin className="h-4 w-4 brand-icon" />
                 <span>Nigeria</span>
               </div>
             </div>
@@ -50,9 +50,9 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-white/90">Product</h3>
             <ul className="mt-4 space-y-2 text-sm text-slate-300">
-              <li><a href="#services" className="hover:text-white">Services</a></li>
+              <li><a href="#services" className="hover:text-white">Features</a></li>
               <li><a href="#how-it-works" className="hover:text-white">How it works</a></li>
-              <li><a href="#testimonials" className="hover:text-white">Reviews</a></li>
+              <li><a href="#testimonials" className="hover:text-white">Stories</a></li>
               <li><a href="#faq" className="hover:text-white">FAQ</a></li>
             </ul>
           </div>
@@ -74,9 +74,9 @@ export function Footer() {
               <input
                 type="email"
                 placeholder="you@example.com"
-                className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-400 outline-none ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-400 outline-none ring-1 ring-inset ring-white/10 focus:ring-2 brand-focus-ring"
               />
-              <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+              <button className="rounded-lg brand-bg px-4 py-2 text-sm font-semibold text-white">
                 Join
               </button>
             </div>
@@ -88,7 +88,7 @@ export function Footer() {
             &copy; {new Date().getFullYear()} {brandName}. All rights reserved.
           </p>
           <p className="text-xs text-slate-400">
-            Built for fast delivery and reliable support.
+            Built for merchants, agents, and resellers.
           </p>
         </div>
       </div>

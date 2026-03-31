@@ -1,6 +1,5 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import authReducer from "./features/user/userSlice";
-import serviceReducer from "./features/services/serviceSlice";
 import transactionReducer from "./features/transaction/transactionSlice";
 import walletReducer from "./features/wallet/walletSlice";
 import notificationReducer from "./features/notifications/notificationSlice";
@@ -9,7 +8,6 @@ import easyAccessdataPlansReducer from "./features/easyAccess/service"; // Assum
 // Combine reducers
 const rootReducer = combineReducers({
   auth: authReducer,
-  service: serviceReducer,
   transactions: transactionReducer,
   wallets: walletReducer,
   notifications: notificationReducer,

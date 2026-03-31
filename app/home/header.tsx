@@ -4,10 +4,11 @@ import { Menu, Phone, X } from "lucide-react"
 import Link from "next/link"
 
 export function Header() {
-  const [brandName, setBrandName] = useState(process.env.NEXT_PUBLIC_BRAND_NAME || "Almaleek TopUp")
+  const [brandName, setBrandName] = useState(process.env.NEXT_PUBLIC_BRAND_NAME || "Surplus TopUp")
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [primaryColor, setPrimaryColor] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
+  const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || ""
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_URL
@@ -35,32 +36,40 @@ export function Header() {
             ) : (
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-white shadow-sm"
-                style={primaryColor ? { backgroundColor: primaryColor } : { backgroundColor: "#16a34a" }}
+                style={primaryColor ? { backgroundColor: primaryColor } : { backgroundColor: "var(--brand-600)" }}
               >
                 <Phone className="h-5 w-5" />
               </div>
             )}
             <div className="flex flex-col leading-tight">
               <span className="text-sm font-semibold text-slate-900">{brandName}</span>
-              <span className="text-xs text-slate-500">Fast VTU • Secure payments</span>
+              <span className="text-xs text-slate-500">Merchant VTU storefronts</span>
             </div>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#services" className="text-slate-600 hover:text-slate-900 transition-colors">Services</a>
+            <a href="#services" className="text-slate-600 hover:text-slate-900 transition-colors">Features</a>
             <a href="#how-it-works" className="text-slate-600 hover:text-slate-900 transition-colors">How it works</a>
-            <a href="#testimonials" className="text-slate-600 hover:text-slate-900 transition-colors">Reviews</a>
+            <a href="#testimonials" className="text-slate-600 hover:text-slate-900 transition-colors">Stories</a>
             <a href="#faq" className="text-slate-600 hover:text-slate-900 transition-colors">FAQ</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
+            {adminUrl ? (
+              <a
+                href={adminUrl}
+                className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Merchant portal
+              </a>
+            ) : null}
             <Link href="/auth/signin" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
               Sign in
             </Link>
             <Link
               href="/auth/signup"
               className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm"
-              style={primaryColor ? { backgroundColor: primaryColor } : { backgroundColor: "#16a34a" }}
+              style={primaryColor ? { backgroundColor: primaryColor } : { backgroundColor: "var(--brand-600)" }}
             >
               Create account
             </Link>
@@ -80,25 +89,34 @@ export function Header() {
           <div className="md:hidden pb-4">
             <div className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3">
               <a href="#services" className="rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" onClick={() => setOpen(false)}>
-                Services
+                Features
               </a>
               <a href="#how-it-works" className="rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" onClick={() => setOpen(false)}>
                 How it works
               </a>
               <a href="#testimonials" className="rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" onClick={() => setOpen(false)}>
-                Reviews
+                Stories
               </a>
               <a href="#faq" className="rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" onClick={() => setOpen(false)}>
                 FAQ
               </a>
               <div className="grid grid-cols-2 gap-2 pt-2">
+                {adminUrl ? (
+                  <a
+                    href={adminUrl}
+                    className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    onClick={() => setOpen(false)}
+                  >
+                    Merchant portal
+                  </a>
+                ) : null}
                 <Link href="/auth/signin" className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" onClick={() => setOpen(false)}>
                   Sign in
                 </Link>
                 <Link
                   href="/auth/signup"
                   className="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-white"
-                  style={primaryColor ? { backgroundColor: primaryColor } : { backgroundColor: "#16a34a" }}
+                  style={primaryColor ? { backgroundColor: primaryColor } : { backgroundColor: "var(--brand-600)" }}
                   onClick={() => setOpen(false)}
                 >
                   Create account

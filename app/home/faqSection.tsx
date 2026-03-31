@@ -4,34 +4,34 @@ import { useState } from "react";
 
 const faqs = [
   {
-    question: "How quickly are transactions processed?",
+    question: "Do I need to know how to build a website?",
     answer:
-      "All transactions are processed instantly. Airtime and data are delivered within seconds, while bill payments are processed immediately with confirmation.",
+      "No. Once you register, you get a ready-to-use merchant storefront with your own link. You can add your logo, brand name, and colors without any coding.",
   },
   {
-    question: "What payment methods do you accept?",
+    question: "Can I set my own prices as a POS agent/merchant?",
     answer:
-      "We accept bank transfers, and wallet funding. All payments are secured with bank-level encryption.",
+      "Yes. You can set your selling price per plan (or use markup rules). We also keep the platform price available for transparency.",
   },
   {
-    question: "Do you offer API integration for businesses?",
+    question: "How do customers buy from my storefront?",
     answer:
-      "Yes, we provide comprehensive API documentation and support for businesses looking to integrate our VTU services into their platforms.",
+      "Share your merchant link. Customers can register or sign in and purchase airtime, data, and bills through your branded page.",
   },
   {
-    question: "What are your transaction limits?",
+    question: "How do I fund my wallet to start selling?",
     answer:
-      "Transaction limits vary by account type. Starter accounts have daily limits of ₦50,000, while Business and Enterprise accounts have higher or custom limits.",
+      "Fund your wallet via bank transfer. Your wallet balance is used to fulfill customer transactions instantly.",
   },
   {
-    question: "Is there customer support available?",
+    question: "Can I use my own domain name?",
     answer:
-      "Yes, we offer 24/7 customer support via phone, email, and live chat. Business and Enterprise customers get priority support.",
+      "Yes (optional). You can start with a free merchant link, and later upgrade to a custom domain when enabled on your plan.",
   },
   {
-    question: "How secure are my transactions?",
+    question: "What happens if a transaction fails?",
     answer:
-      "We use bank-level security with SSL encryption, two-factor authentication, and comply with all Nigerian financial regulations.",
+      "Failed transactions are tracked with full history. Where applicable, refunds are processed back to the wallet automatically after reconciliation.",
   },
 ];
 
@@ -46,7 +46,7 @@ export function FaqSection() {
             Frequently Asked Questions
           </h2>
           <p className="text-base sm:text-lg text-slate-600">
-            Quick answers to the most common questions.
+            Quick answers for merchants and POS agents.
           </p>
         </div>
 

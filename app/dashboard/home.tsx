@@ -57,7 +57,7 @@ export const HomeDashboard = () => {
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
       case "success":
-        return <CheckCircle className="text-green-500 w-5 h-5" />;
+        return <CheckCircle className="brand-text w-5 h-5" />;
       case "failed":
         return <XCircle className="text-red-500 w-5 h-5" />;
       default:
@@ -68,7 +68,7 @@ export const HomeDashboard = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "success":
-        return "text-green-500 bg-green-100";
+        return "text-[color:var(--brand-600)] bg-[color:var(--brand-100)]";
       case "failed":
         return "text-red-500 bg-red-100";
       default:
@@ -81,13 +81,13 @@ export const HomeDashboard = () => {
       <ApHomeHeader />
 
       <div
-        className="  bg-gradient-to-br from-green-600 to-green-800 text-white 
+        className="text-white 
     rounded-2xl p-6 shadow-lg 
     ring-1 ring-white/10 mb-6 
     transform-gpu transition-transform duration-200 ease-out 
     hover:scale-[1.01] 
     will-change-transform
-    [background:linear-gradient(135deg,#16a34a,#166534)]"
+    [background:linear-gradient(135deg,var(--brand-600),var(--brand-700))]"
       >
         {/* Wallet balance header */}
         <div className="flex justify-between items-center mb-2">
@@ -146,7 +146,7 @@ export const HomeDashboard = () => {
           },
           {
             id: 2,
-            icon: <Download size={24} className="text-green-500" />,
+            icon: <Download size={24} className="brand-text" />,
             label: "Receive",
             link: "/dashboard/sendMoney",
           },
@@ -158,7 +158,7 @@ export const HomeDashboard = () => {
           },
           {
             id: 4,
-            icon: <Wifi size={24} className="text-green-500" />,
+            icon: <Wifi size={24} className="brand-text" />,
             label: "Data",
             link: "/dashboard/buyData",
           },

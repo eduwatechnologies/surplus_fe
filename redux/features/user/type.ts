@@ -17,3 +17,15 @@ export interface User {
     virtualAccountId: string;
   };
 }
+
+export interface SignupPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  state: string;
+  phone: string;
+  password: string;
+  pinCode: string;
+  referralCode?: string;
+  tenantSlug?: string;
+}
