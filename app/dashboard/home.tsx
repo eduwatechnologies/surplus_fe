@@ -292,7 +292,7 @@ export const HomeDashboard = () => {
         )}
       </div>
 
-      <div className="mb-2 flex items-end justify-between gap-3">
+      <div className="mb-2 mt-2 flex items-end justify-between gap-3 ">
         <div>
           <h2 className="text-sm font-semibold text-gray-800">Quick Actions</h2>
           {/* <p className="text-xs text-gray-500">Pay bills and top up instantly.</p> */}

@@ -274,7 +274,7 @@ export default function EasyAccessBuyData() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[color:var(--brand-50)]">
       <ApHeader title="Buy Data" />
       <div className="flex flex-col items-center p-4">
         <div className="w-full max-w-md">

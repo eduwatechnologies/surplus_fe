@@ -208,13 +208,11 @@ export default function BuyCableTv() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[color:var(--brand-50)]">
       <ApHeader title="Buy Cable TV Subscription" />
-      <div className="flex bg-[color:var(--brand-50)] justify-center p-4">
-        <div className="bg-white p-6 w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
-          <p className="text-sm text-slate-600 text-center py-2 mb-4">
-            Select a provider and enter details to subscribe.
-          </p>
+      <div className="flex  justify-center py-4">
+        <div className=" w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
+        
 
           <Formik
             initialValues={{

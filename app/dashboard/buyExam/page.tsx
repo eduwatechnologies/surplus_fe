@@ -118,10 +118,10 @@ export default function BuyExam() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[color:var(--brand-50)]">
       <ApHeader title="Buy Exam Card" />
-      <div className="flex bg-[color:var(--brand-50)] justify-center p-4">
-        <div className="bg-white p-6 w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
+      <div className="flex  justify-center py-4">
+        <div className="w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
        
 
           <Formik

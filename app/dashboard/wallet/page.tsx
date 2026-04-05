@@ -116,7 +116,7 @@ export default function WalletCard() {
         </div>
       </div> */}
 
-      <div className="flex flex-wrap gap-4 bg-slate-50 p-4">
+      <div className="flex flex-wrap gap-4 bg-slate-50 py-4">
         {banksInfo
           .filter((bank: any) => !hasAccountForBank(bank.bank))
           .map((bank: any, index: number) => {

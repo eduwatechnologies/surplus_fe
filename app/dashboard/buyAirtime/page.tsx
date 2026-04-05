@@ -112,14 +112,11 @@ export default function BuyAirtime() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[color:var(--brand-50)] ">
       <ApHeader title="Buy Airtime" />
-      <div className="flex bg-[color:var(--brand-50)]">
-        <div className="bg-white p-6 w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
-          <p className="text-sm text-slate-600 text-center py-2 mb-4">
-            Select your network, enter your number and amount, and complete with
-            your PIN.
-          </p>
+      <div className="flex  mt-4">
+        <div className=" w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
+         
 
           <Formik
             initialValues={{ phone: "", amount: "100" }}

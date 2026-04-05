@@ -213,14 +213,11 @@ export default function BuyElectricity() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[color:var(--brand-50)]">
       <ApHeader title="Buy Electricity" />
-      <div className="flex bg-[color:var(--brand-50)] justify-center p-4">
-        <div className="bg-white p-6 w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
-          <p className="text-sm text-slate-600 text-center py-2 mb-4">
-            Select provider, verify your meter, enter amount and phone, and
-            complete with your PIN.
-          </p>
+      <div className="flex justify-center py-4">
+        <div className=" w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
+         
           <Formik
             initialValues={{
               meterno: "",
@@ -235,9 +232,7 @@ export default function BuyElectricity() {
             {({ values, setFieldValue, isValid }) => (
               <Form>
                 <div className="mb-4">
-                  <div className="text-sm font-medium text-slate-700 mb-2 text-center">
-                    Select Provider
-                  </div>
+                
                   <div className="grid grid-cols-3 gap-3">
                     {electricityServices.map((provider: any) => {
                       const label = String(provider?.name || "")
