@@ -14,7 +14,6 @@ import {
   getDataServices,
   purchaseAirtime,
 } from "@/redux/features/easyAccess/service";
-import { detectNetwork } from "@/utils/networkChecker";
 
 interface FormValues {
   phone: string;
@@ -128,30 +127,49 @@ export default function BuyAirtime() {
               return (
                 <Form>
                   {/* Network Logos */}
-                  <div className="flex flex-wrap justify-center gap-4 mb-4">
-                    {dataServices.map((service: any) => (
-                      <button
-                        key={service._id}
-                        type="button"
-                        className={`flex items-center justify-center p-3 border-2 rounded-xl ${
-                          selectedNetwork === service.name
-                            ? "border-[color:var(--brand-700)] "
-                            : "border-slate-200"
-                        }`}
-                        onClick={() => {
-                          const provider = service.name
-                            .split(" ")[0]
-                            .toLowerCase();
-                          setSelectedNetwork(provider);
-                        }}
-                      >
-                        <img
-                          src={service.image}
-                          alt={service.name}
-                          className="w-10 h-10 object-contain"
-                        />
-                      </button>
-                    ))}
+                  {/* <div className="flex flex-wrap justify-center gap-4 mb-4"> */}
+  <div className="grid grid-cols-4 gap-4 mb-4">
+                    {dataServices.map((service: any) => {
+                      const provider = String(service?.name || "")
+                        .split(" ")[0]
+                        .toLowerCase();
+                      const isSelected = selectedNetwork === provider;
+
+                      return (
+                        <button
+                          key={service._id}
+                          type="button"
+                          className={`group flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition ${
+                            isSelected
+                              ? "border-[color:var(--brand-700)] bg-[color:var(--brand-50)]"
+                              : "border-slate-200 hover:border-slate-300"
+                          }`}
+                          onClick={() => setSelectedNetwork(provider)}
+                        >
+                          <div className="relative flex items-center justify-center">
+                            <img
+                              src={service.image}
+                              alt={service.name}
+                              className="w-10 h-10 object-contain"
+                            />
+                            {isSelected ? (
+                              <span className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--brand-700)] text-[10px] font-bold text-white">
+                                ✓
+                              </span>
+                            ) : null}
+                          </div>
+                          <span
+                            className={`text-[11px] font-semibold ${
+                              isSelected
+                                ? "text-[color:var(--brand-700)]"
+                                : "text-slate-600 group-hover:text-slate-800"
+                            }`}
+                          >
+                            {provider.toUpperCase()}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <ApTextInput

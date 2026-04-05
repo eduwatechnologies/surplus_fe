@@ -34,6 +34,7 @@ export default function BuyCableTv() {
   const [isVerified, setIsVerified] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [formData, setFormData] = useState<any | null>(null);
   const [pinCode, setPinCode] = useState("");
@@ -162,6 +163,7 @@ export default function BuyCableTv() {
     } finally {
       setLoading(false);
       setPinModalOpen(false);
+      setPreviewModalOpen(false);
       setPinCode("");
     }
   };
@@ -192,9 +194,9 @@ export default function BuyCableTv() {
   return (
     <div className="min-h-screen bg-white">
       <ApHeader title="Buy Cable TV Subscription" />
-      <div className="flex justify-center">
-        <div className="bg-white p-6  w-96">
-          <p className="text-sm text-gray-600 text-center py-2 mb-4">
+      <div className="flex bg-[color:var(--brand-50)] justify-center p-4">
+        <div className="bg-white p-6 w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
+          <p className="text-sm text-slate-600 text-center py-2 mb-4">
             Select a provider and enter details to subscribe.
           </p>
 
@@ -207,30 +209,51 @@ export default function BuyCableTv() {
             // validationSchema={validationSchema}
             onSubmit={() => {}}
           >
-            {({ setFieldValue, values, isValid, dirty, handleSubmit }) => (
+            {({ setFieldValue, values }) => (
               <Form>
                 {/* Providers */}
-                <div className="flex justify-center space-x-4 mb-4">
-                  {cableServices.map((provider) => (
-                    <button
-                      key={provider.name}
-                      type="button"
-                      className={`p-2 rounded-lg border ${
-                        selectedProvider === provider.name
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-300"
-                      } hover:border-blue-500 transition-colors`}
-                      onClick={() =>
-                        handleNetworkSelect(provider, setFieldValue)
-                      }
-                    >
-                      <img
-                        src={provider.image}
-                        alt={provider.name}
-                        className="w-12 h-12 object-contain"
-                      />
-                    </button>
-                  ))}
+                <div className="grid grid-cols-4 gap-4 mb-4">
+                  {cableServices.map((provider) => {
+                    const label = String(provider?.name || "")
+                      .split(" ")[0]
+                      .toLowerCase();
+                    const isSelected = selectedProvider === provider?.name;
+
+                    return (
+                      <button
+                        key={provider.name}
+                        type="button"
+                        className={`group flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition ${
+                          isSelected
+                            ? "border-[color:var(--brand-700)] bg-[color:var(--brand-50)]"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                        onClick={() => handleNetworkSelect(provider, setFieldValue)}
+                      >
+                        <div className="relative flex items-center justify-center">
+                          <img
+                            src={provider.image}
+                            alt={provider.name}
+                            className="w-10 h-10 object-contain"
+                          />
+                          {isSelected ? (
+                            <span className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--brand-700)] text-[10px] font-bold text-white">
+                              ✓
+                            </span>
+                          ) : null}
+                        </div>
+                        <span
+                          className={`text-[11px] font-semibold ${
+                            isSelected
+                              ? "text-[color:var(--brand-700)]"
+                              : "text-slate-600 group-hover:text-slate-800"
+                          }`}
+                        >
+                          {label ? label.toUpperCase() : "—"}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <ApTextInput
@@ -247,16 +270,20 @@ export default function BuyCableTv() {
                 />
 
                 {customerDetails.name && (
-                  <div className="mt-3 p-3 bg-gray-100 rounded-md space-y-1">
-                    <p className="text-sm">
-                      <span className="font-medium">Name:</span>{" "}
-                      {customerDetails.name}
-                    </p>
+                  <div className="mt-3 p-4 rounded-2xl bg-slate-50 ring-1 ring-slate-100 space-y-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs text-slate-500">Name</div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {customerDetails.name}
+                      </div>
+                    </div>
                     {customerDetails.dueDate && (
-                      <p className="text-sm">
-                        <span className="font-medium">Due Date:</span>{" "}
-                        {customerDetails.dueDate}
-                      </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-xs text-slate-500">Due Date</div>
+                        <div className="text-sm font-semibold text-slate-900">
+                          {customerDetails.dueDate}
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -277,10 +304,18 @@ export default function BuyCableTv() {
                 <ApButton
                   type="button"
                   className="w-full mt-4"
-                  disabled={loading || !isValid || !dirty}
+                  disabled={loading || !selectedProvider || !selectedPlan}
                   onClick={() => {
+                    if (!selectedProvider) {
+                      toast.error("Please select a provider");
+                      return;
+                    }
+                    if (!selectedPlan) {
+                      toast.error("Please select a plan");
+                      return;
+                    }
                     setFormData(values);
-                    setPinModalOpen(true);
+                    setPreviewModalOpen(true);
                   }}
                   title="Continue"
                 />
@@ -298,7 +333,7 @@ export default function BuyCableTv() {
                           <button
                             key={i}
                             onClick={() => handleCategorySelect(c)}
-                            className="w-full px-4 py-3 bg-gray-100 rounded-lg hover:bg-blue-50"
+                            className="w-full px-4 py-3 bg-slate-50 rounded-xl ring-1 ring-slate-100 hover:bg-[color:var(--brand-50)] text-left font-semibold text-slate-700"
                           >
                             {c}
                           </button>
@@ -308,7 +343,7 @@ export default function BuyCableTv() {
                       <div className="space-y-2">
                         <button
                           onClick={() => setStep("categories")}
-                          className="text-blue-500 text-sm mb-2"
+                          className="text-[color:var(--brand-700)] text-sm mb-2 font-semibold"
                         >
                           ← Back
                         </button>
@@ -316,9 +351,16 @@ export default function BuyCableTv() {
                           <button
                             key={i}
                             onClick={() => handlePlanSelect(p, setFieldValue)}
-                            className="w-full px-4 py-3 bg-gray-100 rounded-lg hover:bg-blue-50"
+                            className="w-full px-4 py-3 bg-slate-50 rounded-xl ring-1 ring-slate-100 hover:bg-[color:var(--brand-50)] text-left"
                           >
-                            {p.name} — ₦{p.ourPrice}
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-sm font-semibold text-slate-900">
+                                {p.name}
+                              </div>
+                              <div className="text-sm font-extrabold text-[color:var(--brand-700)]">
+                                ₦{Number(p.ourPrice ?? 0).toLocaleString()}
+                              </div>
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -331,6 +373,79 @@ export default function BuyCableTv() {
         </div>
       </div>
 
+      {previewModalOpen && formData ? (
+        <div
+          className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4"
+          onClick={(e) =>
+            e.target === e.currentTarget && setPreviewModalOpen(false)
+          }
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-100">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">
+                  Confirm purchase
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Review details before entering your PIN.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Provider</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {selectedProvider || "—"}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Smartcard</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(formData.smartCardNo || "—")}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Phone</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(formData.phone || "—")}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Plan</div>
+                <div className="text-sm font-semibold text-slate-900 text-right">
+                  {String(selectedPlan?.name || "—")}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Amount</div>
+                <div className="text-sm font-extrabold text-[color:var(--brand-700)]">
+                  ₦{Number(formData.amount || 0).toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <ApButton
+                title="Edit"
+                className="w-1/2"
+                onClick={() => setPreviewModalOpen(false)}
+                type="button"
+              />
+              <ApButton
+                title="Proceed"
+                className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
+                onClick={() => {
+                  setPreviewModalOpen(false);
+                  setPinModalOpen(true);
+                }}
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* PIN Modal */}
       {pinModalOpen && (
         <div
@@ -339,7 +454,7 @@ export default function BuyCableTv() {
             e.target === e.currentTarget && setPinModalOpen(false)
           }
         >
-          <div className="bg-white p-6 rounded-lg w-full max-w-sm">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-lg ring-1 ring-slate-100">
             <h2 className="text-lg font-semibold mb-4 text-center">
               Enter Transaction PIN
             </h2>
@@ -352,7 +467,7 @@ export default function BuyCableTv() {
                 }
               }}
               maxLength={4}
-              className="w-full p-2 border-2 border-gray-300 rounded-lg mb-4 text-center text-xl tracking-widest focus:border-blue-500 focus:outline-none"
+              className="w-full p-2 border-2 border-slate-200 rounded-xl mb-4 text-center text-xl tracking-widest focus:border-[color:var(--brand-600)] focus:outline-none"
               placeholder="••••"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -370,7 +485,7 @@ export default function BuyCableTv() {
               />
               <ApButton
                 title={loading ? "Processing..." : "Submit"}
-                className="w-1/2 bg-blue-600 hover:bg-blue-700"
+                className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
                 disabled={loading || pinCode.length !== 4}
                 onClick={() => formData && handleFormSubmit(formData)}
                 type="button"

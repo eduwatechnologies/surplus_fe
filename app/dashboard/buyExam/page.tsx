@@ -21,6 +21,7 @@ export default function BuyExam() {
   const [selectedExam, setSelectedExam] = useState<string>("");
   const [selectedPlanId, setSelectedPlanId] = useState<string>();
   const [pinCode, setPinCode] = useState("");
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [formData, setFormData] = useState<any | null>(null);
 
@@ -99,11 +100,9 @@ export default function BuyExam() {
   return (
     <div className="min-h-screen bg-white">
       <ApHeader title="Buy Exam Card" />
-      <div className="flex justify-center">
-        <div className="bg-white p-6 w-96">
-          <p className="text-sm text-gray-600 text-center py-2 mb-4">
-            Select your exam type, enter your number, and get pins instantly.
-          </p>
+      <div className="flex bg-[color:var(--brand-50)] justify-center p-4">
+        <div className="bg-white p-6 w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
+       
 
           <Formik
             initialValues={{
@@ -112,12 +111,9 @@ export default function BuyExam() {
               type: "",
             }}
             validationSchema={validationSchema}
-            onSubmit={(values) => {
-              setFormData(values);
-              setPinModalOpen(true);
-            }}
+            onSubmit={() => {}}
           >
-            {({ values, setFieldValue }) => {
+            {({ values, setFieldValue, isValid }) => {
               const computedAmount = values.quantity
                 ? Number(values.quantity) * unitPrice
                 : 0;
@@ -125,16 +121,16 @@ export default function BuyExam() {
               return (
                 <Form>
                   {/* Exam Selection */}
-                  <div className="flex justify-center space-x-4 mb-4">
+                  <div className="grid grid-cols-4 gap-4 mb-4">
                     {examServices.map((exam, index) => (
                       <button
                         key={index}
                         type="button"
-                        className={`p-2 rounded-lg border ${
-                          selectedExam === exam.name
-                            ? "border-blue-500"
-                            : "border-gray-300"
-                        } hover:border-blue-500 transition`}
+                        className={`group flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition ${
+                          selectedExam === exam.code
+                            ? "border-[color:var(--brand-700)] bg-[color:var(--brand-50)]"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
                         onClick={() => {
                           setSelectedExam(exam.code);
                           setSelectedPlanId(exam?._id);
@@ -144,11 +140,29 @@ export default function BuyExam() {
                           );
                         }}
                       >
-                        <img
-                          src={exam.image}
-                          alt={exam.name}
-                          className="w-12 h-12"
-                        />
+                        <div className="relative flex items-center justify-center">
+                          <img
+                            src={exam.image}
+                            alt={exam.name}
+                            className="w-10 h-10 object-contain"
+                          />
+                          {selectedExam === exam.code ? (
+                            <span className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--brand-700)] text-[10px] font-bold text-white">
+                              ✓
+                            </span>
+                          ) : null}
+                        </div>
+                        <span
+                          className={`text-[11px] font-semibold ${
+                            selectedExam === exam.code
+                              ? "text-[color:var(--brand-700)]"
+                              : "text-slate-600 group-hover:text-slate-800"
+                          }`}
+                        >
+                          {String(exam.code || "")
+                            .replace(/[^a-z0-9]/gi, "")
+                            .toUpperCase() || "—"}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -178,36 +192,48 @@ export default function BuyExam() {
                   {/* Show unit price */}
                   {unitPrice > 0 && (
                     <div className="mt-3">
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-slate-700">
                         Unit Price
                       </label>
                       <input
                         type="text"
                         readOnly
                         value={`₦${unitPrice}`}
-                        className="mt-1 p-2 border border-gray-300 rounded-md w-full bg-gray-100"
+                        className="mt-1 p-2 border border-slate-200 rounded-xl w-full bg-slate-50"
                       />
                     </div>
                   )}
 
                   {/* Computed total amount */}
                   <div className="mt-3">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-slate-700">
                       Total Amount
                     </label>
                     <input
                       type="text"
                       readOnly
                       value={computedAmount > 0 ? `₦${computedAmount}` : ""}
-                      className="mt-1 p-2 border border-gray-300 rounded-md w-full bg-gray-100"
+                      className="mt-1 p-2 border border-slate-200 rounded-xl w-full bg-slate-50"
                     />
                   </div>
 
                   <ApButton
-                    type="submit"
+                    type="button"
                     className="w-full mt-4"
-                    disabled={loading || !selectedExam}
-                    title={loading ? "Processing..." : "Buy Exam"}
+                    disabled={loading || !selectedExam || !isValid}
+                    title="Continue"
+                    onClick={() => {
+                      if (!selectedExam) {
+                        toast.error("Please select an exam type");
+                        return;
+                      }
+                      if (!isValid) {
+                        toast.error("Please fill the form correctly");
+                        return;
+                      }
+                      setFormData(values);
+                      setPreviewModalOpen(true);
+                    }}
                   />
                 </Form>
               );
@@ -215,6 +241,82 @@ export default function BuyExam() {
           </Formik>
         </div>
       </div>
+
+      {previewModalOpen && formData ? (
+        <div
+          className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4"
+          onClick={(e) =>
+            e.target === e.currentTarget && setPreviewModalOpen(false)
+          }
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-100">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">
+                  Confirm purchase
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Review details before entering your PIN.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Type</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(selectedExam || "—").toUpperCase()}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Quantity</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(formData.quantity || "—")}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Phone</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(formData.phone || "—")}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Unit</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  ₦{Number(unitPrice || 0).toLocaleString()}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Total</div>
+                <div className="text-sm font-extrabold text-[color:var(--brand-700)]">
+                  ₦
+                  {Number(
+                    (Number(formData.quantity || 0) || 0) * (unitPrice || 0)
+                  ).toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <ApButton
+                title="Edit"
+                className="w-1/2"
+                onClick={() => setPreviewModalOpen(false)}
+                type="button"
+              />
+              <ApButton
+                title="Proceed"
+                className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
+                onClick={() => {
+                  setPreviewModalOpen(false);
+                  setPinModalOpen(true);
+                }}
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* PIN Modal */}
       {pinModalOpen && (
@@ -224,7 +326,7 @@ export default function BuyExam() {
             e.target === e.currentTarget && setPinModalOpen(false)
           }
         >
-          <div className="bg-white p-6 rounded-lg w-full max-w-sm">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-lg ring-1 ring-slate-100">
             <h2 className="text-lg font-semibold mb-4 text-center">
               Enter Transaction PIN
             </h2>
@@ -237,7 +339,7 @@ export default function BuyExam() {
                 }
               }}
               maxLength={4}
-              className="w-full p-2 border-2 border-gray-300 rounded-lg mb-4 text-center text-xl tracking-widest focus:border-blue-500 focus:outline-none"
+              className="w-full p-2 border-2 border-slate-200 rounded-xl mb-4 text-center text-xl tracking-widest focus:border-[color:var(--brand-600)] focus:outline-none"
               placeholder="••••"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -255,7 +357,7 @@ export default function BuyExam() {
               />
               <ApButton
                 title={loading ? "Processing..." : "Submit"}
-                className="w-1/2 bg-blue-600 hover:bg-blue-700"
+                className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
                 disabled={loading || pinCode.length !== 4}
                 onClick={() => formData && handleFormSubmit(formData)}
                 type="button"

@@ -8,7 +8,6 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { AppDispatch, RootState } from "@/redux/store";
 import { useDispatch, useSelector } from "react-redux";
-import GlobalModal from "@/components/modal/globalModal";
 import { ApButton } from "@/components/button/button";
 import ApHeader from "@/components/Apheader";
 import {
@@ -42,9 +41,9 @@ export default function BuyElectricity() {
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({});
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [formData, setFormData] = useState<any | null>(null);
   const [pinCode, setPinCode] = useState("");
@@ -132,18 +131,6 @@ export default function BuyElectricity() {
     }
   };
 
-  // Handle provider selection
-  const handleSelectProvider = (
-    provider: string,
-    setFieldValue: (field: string, value: string) => void,
-    planId: string
-  ) => {
-    setSelectedProvider(provider);
-    setSelectedPlanId(planId);
-    setFieldValue("company", provider);
-    setIsModalOpen(false);
-  };
-
   // Handle form submit
   const handleFormSubmit = async (values: Electricity) => {
     if (!isMeterVerified) {
@@ -193,6 +180,7 @@ export default function BuyElectricity() {
     } finally {
       setLoading(false);
       setPinModalOpen(false);
+      setPreviewModalOpen(false);
       setPinCode("");
     }
   };
@@ -221,8 +209,12 @@ export default function BuyElectricity() {
   return (
     <div className="min-h-screen bg-white">
       <ApHeader title="Buy Electricity" />
-      <div className="flex justify-center">
-        <div className="bg-white p-6  w-96">
+      <div className="flex bg-[color:var(--brand-50)] justify-center p-4">
+        <div className="bg-white p-6 w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
+          <p className="text-sm text-slate-600 text-center py-2 mb-4">
+            Select provider, verify your meter, enter amount and phone, and
+            complete with your PIN.
+          </p>
           <Formik
             initialValues={{
               meterno: "",
@@ -231,11 +223,66 @@ export default function BuyElectricity() {
               amount: "",
               phone: "",
             }}
-            // validationSchema={validationSchema}
+            validationSchema={validationSchema}
             onSubmit={() => {}}
           >
-            {({ values, setFieldValue, isValid, dirty }) => (
+            {({ values, setFieldValue, isValid }) => (
               <Form>
+                <div className="mb-4">
+                  <div className="text-sm font-medium text-slate-700 mb-2 text-center">
+                    Select Provider
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {electricityServices.map((provider: any) => {
+                      const label = String(provider?.name || "")
+                        .split(" ")[0]
+                        .toLowerCase();
+                      const isSelected = selectedProvider === provider?.name;
+
+                      return (
+                        <button
+                          key={provider?._id || provider?.id || provider?.name}
+                          type="button"
+                          className={`group flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition ${
+                            isSelected
+                              ? "border-[color:var(--brand-700)] bg-[color:var(--brand-50)]"
+                              : "border-slate-200 hover:border-slate-300"
+                          }`}
+                          onClick={() => {
+                            setSelectedProvider(provider?.name);
+                            setSelectedPlanId(provider?._id);
+                            setFieldValue("company", provider?.name);
+                            setIsMeterVerified(false);
+                            setCustomerDetails({});
+                          }}
+                        >
+                          <div className="relative flex items-center justify-center">
+                            <img
+                              src={provider?.image}
+                              alt={provider?.name}
+                              className="w-10 h-10 object-contain"
+                            />
+                            {isSelected ? (
+                              <span className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--brand-700)] text-[10px] font-bold text-white">
+                                ✓
+                              </span>
+                            ) : null}
+                          </div>
+                          <span
+                            className={`text-[11px] font-semibold ${
+                              isSelected
+                                ? "text-[color:var(--brand-700)]"
+                                : "text-slate-600 group-hover:text-slate-800"
+                            }`}
+                          >
+                            {label ? label.toUpperCase() : "—"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Meter Number */}
                 <ApTextInput
                   label="Meter Number"
@@ -246,24 +293,23 @@ export default function BuyElectricity() {
 
                 {/* Customer Details */}
                 {isMeterVerified && (
-                  <div className="mt-3 p-3 bg-gray-100 rounded-md">
-                    <p className="text-sm text-gray-700">
-                      <strong>Name:</strong> {customerDetails.name || "N/A"}
-                    </p>
+                  <div className="mt-3 p-4 rounded-2xl bg-slate-50 ring-1 ring-slate-100">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs text-slate-500">Name</div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {customerDetails.name || "N/A"}
+                      </div>
+                    </div>
+                    {customerDetails.address ? (
+                      <div className="mt-2 flex items-start justify-between gap-3">
+                        <div className="text-xs text-slate-500">Address</div>
+                        <div className="text-sm font-semibold text-slate-900 text-right">
+                          {customerDetails.address}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 )}
-
-                {/* Provider Selection */}
-                <label className="block text-sm font-medium text-gray-700 mt-2">
-                  Select Provider
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="w-full p-2 border border-gray-300 rounded-md text-left bg-white"
-                >
-                  {selectedProvider || "Select Provider"}
-                </button>
 
                 {/* Amount */}
                 <ApTextInput
@@ -280,12 +326,15 @@ export default function BuyElectricity() {
                 />
 
                 {/* Meter Type */}
-                <label className="block text-sm font-medium text-gray-700 mt-2">
+                <label className="block text-sm font-medium text-slate-700 mt-2">
                   Select Meter Type
                 </label>
-                <div className="flex space-x-4">
+                <div className="mt-2 grid grid-cols-2 gap-3">
                   {["prepaid", "postpaid"].map((type) => (
-                    <label key={type} className="flex items-center">
+                    <label
+                      key={type}
+                      className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2"
+                    >
                       <input
                         type="radio"
                         name="metertype"
@@ -294,9 +343,11 @@ export default function BuyElectricity() {
                         onChange={() =>
                           handleTypeChange(type, values, setFieldValue)
                         }
-                        className="mr-2"
+                        className="h-4 w-4 accent-[color:var(--brand-700)]"
                       />
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                      <span className="text-sm font-semibold text-slate-700">
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -305,43 +356,99 @@ export default function BuyElectricity() {
                 <ApButton
                   type="button"
                   className="w-full mt-4"
-                  disabled={loading || !isValid || !dirty}
+                  disabled={loading || !isValid || !selectedProvider}
                   onClick={() => {
+                    if (!selectedProvider) {
+                      toast.error("Please select a provider");
+                      return;
+                    }
+                    if (!isMeterVerified) {
+                      toast.error("❌ Please verify your meter number first!");
+                      return;
+                    }
                     setFormData(values);
-                    setPinModalOpen(true);
+                    setPreviewModalOpen(true);
                   }}
                   title="Continue"
                 />
-
-                {/* Provider Modal */}
-                <GlobalModal
-                  title="Select Electricity Provider"
-                  isOpen={isModalOpen}
-                  onClose={() => setIsModalOpen(false)}
-                >
-                  <ul className="space-y-2">
-                    {electricityServices.map((provider) => (
-                      <li
-                        key={provider.id}
-                        className="p-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition cursor-pointer flex justify-between items-center"
-                        onClick={() => {
-                          handleSelectProvider(
-                            provider.name,
-                            setFieldValue,
-                            provider._id
-                          );
-                        }}
-                      >
-                        <span className="capitalize">{provider.name}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </GlobalModal>
               </Form>
             )}
           </Formik>
         </div>
       </div>
+
+      {previewModalOpen && formData ? (
+        <div
+          className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4"
+          onClick={(e) =>
+            e.target === e.currentTarget && setPreviewModalOpen(false)
+          }
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-100">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">
+                  Confirm purchase
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Review details before entering your PIN.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Provider</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(selectedProvider || "—")}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Meter</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(formData.meterno || "—")}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Type</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(formData.metertype || "—").toUpperCase()}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Phone</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {String(formData.phone || "—")}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Amount</div>
+                <div className="text-sm font-extrabold text-[color:var(--brand-700)]">
+                  ₦{Number(formData.amount || 0).toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <ApButton
+                title="Edit"
+                className="w-1/2"
+                onClick={() => setPreviewModalOpen(false)}
+                type="button"
+              />
+              <ApButton
+                title="Proceed"
+                className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
+                onClick={() => {
+                  setPreviewModalOpen(false);
+                  setPinModalOpen(true);
+                }}
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* PIN Modal */}
       {pinModalOpen && (
@@ -351,7 +458,7 @@ export default function BuyElectricity() {
             e.target === e.currentTarget && setPinModalOpen(false)
           }
         >
-          <div className="bg-white p-6 rounded-lg w-full max-w-sm">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-lg ring-1 ring-slate-100">
             <h2 className="text-lg font-semibold mb-4 text-center">
               Enter Transaction PIN
             </h2>
@@ -364,7 +471,7 @@ export default function BuyElectricity() {
                 }
               }}
               maxLength={4}
-              className="w-full p-2 border-2 border-gray-300 rounded-lg mb-4 text-center text-xl tracking-widest focus:border-blue-500 focus:outline-none"
+              className="w-full p-2 border-2 border-slate-200 rounded-xl mb-4 text-center text-xl tracking-widest focus:border-[color:var(--brand-600)] focus:outline-none"
               placeholder="••••"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -382,7 +489,7 @@ export default function BuyElectricity() {
               />
               <ApButton
                 title={loading ? "Processing..." : "Submit"}
-                className="w-1/2 bg-blue-600 hover:bg-blue-700"
+                className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
                 disabled={loading || pinCode.length !== 4}
                 onClick={() => formData && handleFormSubmit(formData)}
                 type="button"

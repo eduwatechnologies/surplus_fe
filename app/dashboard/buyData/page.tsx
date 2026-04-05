@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Form, Formik } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,6 +13,7 @@ import ApHeader from "@/components/Apheader";
 
 import {
   purchaseData,
+  fetchDataCategories,
   fetchDataPlans,
   getDataServices,
 } from "@/redux/features/easyAccess/service";
@@ -46,6 +47,12 @@ export default function EasyAccessBuyData() {
   const plans = useSelector(
     (state: RootState) => state.easyAccessdataPlans.plans
   );
+  const plansLoading = useSelector(
+    (state: RootState) => state.easyAccessdataPlans.loading
+  );
+  const plansError = useSelector(
+    (state: RootState) => state.easyAccessdataPlans.error
+  );
 
   const dataServices = useSelector(
     (state: RootState) => state.easyAccessdataPlans.dataServices
@@ -54,10 +61,61 @@ export default function EasyAccessBuyData() {
   const [selectedNetwork, setSelectedNetwork] = useState<string>("");
   const [activeTab, setActiveTab] = useState<DurationTab>("All");
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [formData, setFormData] = useState<any>(null);
   const [pinCode, setPinCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const plansScrollRef = useRef<HTMLDivElement | null>(null);
+  const [scrollMeta, setScrollMeta] = useState({
+    isScrollable: false,
+    thumbSizePct: 100,
+    thumbTopPct: 0,
+  });
+
+  const normalizeNetwork = (value: string) =>
+    String(value || "")
+      .split(" ")[0]
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toLowerCase();
+
+  const loadPlansForNetwork = async (provider: string) => {
+    const network = normalizeNetwork(provider);
+    if (!network) return;
+
+    try {
+      const categoriesResult = await dispatch(
+        fetchDataCategories({ serviceType: "data", network })
+      );
+
+      if (fetchDataCategories.fulfilled.match(categoriesResult)) {
+        const categories = categoriesResult.payload || [];
+        const preferredCategory =
+          categories.find(
+            (c) => String(c || "").trim().toLowerCase() === "sme"
+          ) || categories[0];
+
+        const plansResult = await dispatch(
+          fetchDataPlans({
+            network,
+            category: preferredCategory,
+          })
+        );
+
+        if (!fetchDataPlans.fulfilled.match(plansResult)) {
+          toast.error(plansResult.payload || "Failed to fetch plans");
+        }
+        return;
+      }
+
+      const fallbackResult = await dispatch(fetchDataPlans({ network }));
+      if (!fetchDataPlans.fulfilled.match(fallbackResult)) {
+        toast.error(fallbackResult.payload || "Failed to fetch plans");
+      }
+    } catch {
+      toast.error("Unexpected error while fetching plans");
+    }
+  };
 
   useEffect(() => {
     dispatch(getDataServices("data"));
@@ -75,14 +133,14 @@ export default function EasyAccessBuyData() {
 
     if (!mtn) return;
 
-    const provider = String(mtn.name || "").split(" ")[0].toLowerCase();
+    const provider = normalizeNetwork(String(mtn.name || ""));
     if (!provider) return;
 
     setSelectedNetwork(provider);
     setSelectedPlan(null);
     setActiveTab("All");
 
-    dispatch(fetchDataPlans({ network: provider }));
+    void loadPlansForNetwork(provider);
   }, [dataServices, dispatch, selectedNetwork]);
 
   const validationSchema = Yup.object({
@@ -109,12 +167,13 @@ export default function EasyAccessBuyData() {
 
   const sortedPlans = useMemo(() => {
     return [...(plans || [])]
-      .filter(
-        (p: any) =>
-          p?.serviceType?.toLowerCase() === "data" &&
-          p?.validity &&
-          p?.name
-      )
+      .filter((p: any) => {
+        if (!p) return false;
+        const serviceType = String(p?.serviceType || "").toLowerCase();
+        const looksLikeData = !serviceType || serviceType === "data";
+        const hasName = Boolean(p?.name || p?.dataName || p?.planName);
+        return looksLikeData && hasName;
+      })
       .sort(
         (a: any, b: any) =>
           Number(a.ourPrice ?? a.amount ?? 0) -
@@ -128,6 +187,31 @@ export default function EasyAccessBuyData() {
       (p: any) => getDurationCategory(p.validity) === activeTab
     );
   }, [activeTab, sortedPlans]);
+
+  const updateScrollMeta = () => {
+    const el = plansScrollRef.current;
+    if (!el) return;
+
+    const scrollHeight = el.scrollHeight || 0;
+    const clientHeight = el.clientHeight || 0;
+    const maxScroll = Math.max(0, scrollHeight - clientHeight);
+    const isScrollable = maxScroll > 0;
+    const ratio = isScrollable ? el.scrollTop / maxScroll : 0;
+    const thumbSizePct = scrollHeight
+      ? Math.max(18, (clientHeight / scrollHeight) * 100)
+      : 100;
+    const thumbTopPct = (100 - thumbSizePct) * ratio;
+
+    setScrollMeta({
+      isScrollable,
+      thumbSizePct: Math.min(100, thumbSizePct),
+      thumbTopPct: Math.max(0, Math.min(100 - thumbSizePct, thumbTopPct)),
+    });
+  };
+
+  useEffect(() => {
+    updateScrollMeta();
+  }, [visiblePlans.length, plansLoading, activeTab, selectedNetwork]);
 
   const handleFormSubmit = async (values: any) => {
     if (!pinCode || pinCode.length !== 4) {
@@ -178,6 +262,7 @@ export default function EasyAccessBuyData() {
     } finally {
       setLoading(false);
       setPinModalOpen(false);
+      setPreviewModalOpen(false);
       setPinCode("");
     }
   };
@@ -187,10 +272,6 @@ export default function EasyAccessBuyData() {
       <ApHeader title="Buy Data" />
       <div className="flex flex-col items-center p-4">
         <div className="w-full max-w-md">
-          <p className="text-sm text-gray-600 text-center py-2 mb-4">
-            Select your network and plan, enter your number, and complete with
-            your PIN.
-          </p>
 
           <Formik
             initialValues={initialValues}
@@ -198,26 +279,24 @@ export default function EasyAccessBuyData() {
             onSubmit={() => {}}
             enableReinitialize
           >
-            {({ values, setFieldValue }) => (
-              <Form>
+              <Form className="flex flex-col">
+                <div className="grid grid-cols-4 gap-4 mb-4 shrink-0">
                 <div className="grid grid-cols-4 gap-4 mb-4">
                   {dataServices.map((service: any) => {
                     const isDisabled = service.status === false;
-                    if (isDisabled) return null;
 
-                    const provider = String(service.name || "")
-                      .split(" ")[0]
-                      .toLowerCase();
+                    const provider = normalizeNetwork(String(service.name || ""));
+                    const isSelected = selectedNetwork === provider;
 
                     return (
                       <button
                         key={service._id}
                         type="button"
-                        className={`flex items-center justify-center p-3 border-2 rounded-xl transition ${
-                          selectedNetwork === provider
-                            ? "border-blue-500"
-                            : "border-gray-200"
-                        } hover:border-blue-400`}
+                        className={`group flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-xl transition ${
+                          isSelected
+                            ? "border-[color:var(--brand-700)] bg-[color:var(--brand-50)]"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
                         onClick={async () => {
                           setSelectedNetwork(provider);
                           setSelectedPlan(null);
@@ -227,29 +306,30 @@ export default function EasyAccessBuyData() {
                           setFieldValue("dataName", "");
                           setFieldValue("amount", "");
 
-                          try {
-                            const result = await dispatch(
-                              fetchDataPlans({
-                                network: provider,
-                              })
-                            );
-                            if (!fetchDataPlans.fulfilled.match(result)) {
-                              toast.error(
-                                result.payload || "Failed to fetch plans"
-                              );
-                            }
-                          } catch {
-                            toast.error(
-                              "Unexpected error while fetching plans"
-                            );
-                          }
+                          await loadPlansForNetwork(provider);
                         }}
                       >
-                        <img
-                          src={service.image}
-                          alt={service.name}
-                          className="w-10 h-10 object-contain"
-                        />
+                        <div className="relative flex items-center justify-center">
+                          <img
+                            src={service.image}
+                            alt={service.name}
+                            className="w-10 h-10 object-contain"
+                          />
+                          {isSelected ? (
+                            <span className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--brand-700)] text-[10px] font-bold text-white">
+                              ✓
+                            </span>
+                          ) : null}
+                        </div>
+                        <span
+                          className={`text-[11px] font-semibold ${
+                            isSelected
+                              ? "text-[color:var(--brand-700)]"
+                              : "text-gray-600 group-hover:text-gray-800"
+                          }`}
+                        >
+                          {provider.toUpperCase()}
+                        </span>
                       </button>
                     );
                   })}
@@ -262,7 +342,7 @@ export default function EasyAccessBuyData() {
                   placeHolder="Enter phone number"
                 />
 
-                <div className="mt-4">
+                <div className="mt-4 shrink-0">
                   <div className="flex gap-6 overflow-x-auto border-b border-gray-200">
                     {durationTabs.map((tab) => (
                       <button
@@ -274,28 +354,55 @@ export default function EasyAccessBuyData() {
                         <span
                           className={`text-sm ${
                             activeTab === tab
-                              ? "text-green-600 font-bold"
+                              ? "text-[color:var(--brand-700)] font-bold"
                               : "text-gray-500"
                           }`}
                         >
                           {tab}
                         </span>
                         {activeTab === tab ? (
-                          <div className="h-1 bg-green-600 mt-2 rounded-full" />
+                          <div className="h-1 bg-[color:var(--brand-600)] mt-2 rounded-full" />
                         ) : null}
                       </button>
                     ))}
                   </div>
 
-                  <div className="mt-3 max-h-[46vh] overflow-y-auto pr-1 custom-scrollbar overscroll-contain">
+                  <div className="mt-3 relative h-[52vh] overflow-hidden">
+                    {scrollMeta.isScrollable ? (
+                      <div className="pointer-events-none absolute right-1 top-2 bottom-2 w-1 rounded-full bg-slate-200/70">
+                        <div
+                          className="absolute left-0 w-full rounded-full bg-[color:var(--brand-600)]"
+                          style={{
+                            height: `${scrollMeta.thumbSizePct}%`,
+                            transform: `translateY(${scrollMeta.thumbTopPct}%)`,
+                          }}
+                        />
+                      </div>
+                    ) : null}
+                    <div
+                      ref={plansScrollRef}
+                      onScroll={updateScrollMeta}
+                      className="plans-scroll h-full overflow-y-auto pr-4 overscroll-contain"
+                    >
                     <div className="grid grid-cols-3 gap-3">
+                      {plansLoading ? (
+                        <div className="col-span-3 py-6 text-center text-sm text-gray-500">
+                          Loading plans...
+                        </div>
+                      ) : null}
                       {visiblePlans.map((p: any, i: number) => {
                         const isActive = selectedPlan?._id === p?._id;
+                        const planName = String(
+                          p?.name || p?.dataName || p?.planName || ""
+                        );
+                        const planPrice = Number(
+                          p?.ourPrice ?? p?.amount ?? p?.price ?? 0
+                        );
                         const sizeText =
-                          String(p.name || "")
+                          planName
                             .match(/\d+(?:\.\d+)?\s*(GB|MB)/i)?.[0]
                             ?.replace(/\s+/g, "")
-                            .toUpperCase() || p.name;
+                            .toUpperCase() || planName;
 
                         return (
                           <button
@@ -303,8 +410,8 @@ export default function EasyAccessBuyData() {
                             type="button"
                             className={`text-left bg-gray-50 border rounded-2xl p-4 transition ${
                               isActive
-                                ? "border-blue-500"
-                                : "border-gray-200 hover:border-blue-300"
+                                ? "border-[color:var(--brand-700)] bg-[color:var(--brand-50)]"
+                                : "border-gray-200 hover:border-gray-300"
                             }`}
                             onClick={() => {
                               if (!/^\d{11}$/.test(values.phone || "")) {
@@ -316,28 +423,28 @@ export default function EasyAccessBuyData() {
 
                               setSelectedPlan(p);
                               setFieldValue("planId", p._id);
-                              setFieldValue("dataName", p.name);
-                              setFieldValue("amount", p.ourPrice);
+                              setFieldValue("dataName", planName);
+                              setFieldValue("amount", planPrice);
                               setFormData({
                                 ...values,
                                 planId: p._id,
-                                dataName: p.name,
-                                amount: p.ourPrice,
+                                dataName: planName,
+                                amount: planPrice,
                                 network: selectedNetwork,
                               });
                               setPinCode("");
-                              setPinModalOpen(true);
+                              setPreviewModalOpen(true);
                             }}
                           >
                             <div className="flex flex-col items-center justify-center text-center gap-2">
                               <div className="text-base font-semibold">
                                 {sizeText}
                               </div>
-                              <div className="inline-flex items-center justify-center bg-green-100 text-gray-700 text-xs px-3 py-1 rounded-full">
-                                {p.validity}
+                              <div className="inline-flex items-center justify-center bg-[color:var(--brand-50)] text-[color:var(--brand-700)] text-xs px-3 py-1 rounded-full">
+                                {p.validity || "—"}
                               </div>
-                              <div className="text-green-600 font-semibold whitespace-nowrap">
-                                ₦{Number(p.ourPrice ?? 0).toLocaleString()}
+                              <div className="text-[color:var(--brand-700)] font-semibold whitespace-nowrap">
+                                ₦{Number(planPrice || 0).toLocaleString()}
                               </div>
                             </div>
                           </button>
@@ -346,14 +453,90 @@ export default function EasyAccessBuyData() {
 
                       {!visiblePlans.length ? (
                         <div className="col-span-3 py-6 text-center text-sm text-gray-500">
-                          {selectedNetwork
-                            ? "No plans found for this tab."
-                            : "Select a network to see plans."}
+                          {plansError
+                            ? String(plansError)
+                            : selectedNetwork
+                              ? "No plans found for this tab."
+                              : "Select a network to see plans."}
                         </div>
                       ) : null}
                     </div>
                   </div>
                 </div>
+                </div>
+
+                {previewModalOpen && formData ? (
+                  <div
+                    className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4"
+                    onClick={(e) =>
+                      e.target === e.currentTarget && setPreviewModalOpen(false)
+                    }
+                  >
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-100">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h2 className="text-base font-semibold text-slate-900">
+                            Confirm purchase
+                          </h2>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            Review details before entering your PIN.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-xs text-slate-500">Network</div>
+                          <div className="text-sm font-semibold text-slate-900">
+                            {String(formData.network || "—").toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="text-xs text-slate-500">Plan</div>
+                          <div className="text-sm font-semibold text-slate-900 text-right">
+                            {String(formData.dataName || "—")}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="text-xs text-slate-500">Validity</div>
+                          <div className="text-sm font-semibold text-slate-900">
+                            {String(selectedPlan?.validity || "—")}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="text-xs text-slate-500">Phone</div>
+                          <div className="text-sm font-semibold text-slate-900">
+                            {String(formData.phone || "—")}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="text-xs text-slate-500">Amount</div>
+                          <div className="text-sm font-extrabold text-[color:var(--brand-700)]">
+                            ₦{Number(formData.amount || 0).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex gap-3">
+                        <ApButton
+                          title="Edit"
+                          className="w-1/2"
+                          onClick={() => setPreviewModalOpen(false)}
+                          type="button"
+                        />
+                        <ApButton
+                          title="Proceed"
+                          className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
+                          onClick={() => {
+                            setPreviewModalOpen(false);
+                            setPinModalOpen(true);
+                          }}
+                          type="button"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 {pinModalOpen && (
                   <div
@@ -390,7 +573,7 @@ export default function EasyAccessBuyData() {
                         />
                         <ApButton
                           title={loading ? "Processing..." : "Submit"}
-                          className="w-1/2 bg-blue-600 text-white"
+                          className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)] text-white"
                           disabled={loading || pinCode.length !== 4}
                           type="button"
                           onClick={() => formData && handleFormSubmit(formData)}
@@ -404,6 +587,27 @@ export default function EasyAccessBuyData() {
           </Formik>
         </div>
       </div>
+      <style jsx>{`
+        .plans-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: var(--brand-600) rgba(148, 163, 184, 0.25);
+        }
+        .plans-scroll::-webkit-scrollbar {
+          width: 10px;
+        }
+        .plans-scroll::-webkit-scrollbar-track {
+          background: rgba(148, 163, 184, 0.18);
+          border-radius: 9999px;
+        }
+        .plans-scroll::-webkit-scrollbar-thumb {
+          background: var(--brand-600);
+          border-radius: 9999px;
+          border: 3px solid rgba(255, 255, 255, 0.7);
+        }
+        .plans-scroll::-webkit-scrollbar-thumb:hover {
+          background: var(--brand-700);
+        }
+      `}</style>
     </div>
   );
 }
