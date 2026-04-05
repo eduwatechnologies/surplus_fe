@@ -2,46 +2,43 @@
 
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { useState } from "react";
 import { ApTextInput } from "@/components/input/textInput";
-import { ApButton } from "@/components/button/button";
-import { useDispatch } from "react-redux";
-import { resetPassword } from "@/redux/features/user/userThunk";
-import { AppDispatch } from "@/redux/store";
 import { toast } from "react-toastify";
+import { AppDispatch } from "@/redux/store";
+import { useDispatch } from "react-redux";
+import { requestPasswordReset } from "@/redux/features/user/userThunk";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ApButton } from "@/components/button/button";
 import logo from "@/public/images/logo.png";
 import Image from "next/image";
 import Link from "next/link";
 
-export function ResetPasswordForm() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function ForgotPasswordForm() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") || "";
-  const code = searchParams.get("code") || "";
   const tenantSlug = searchParams.get("tenant") || "";
 
   const validationSchema = Yup.object({
-    newPassword: Yup.string()
-      .min(6, "Password must be at least 6 characters")
-      .required("New password is required"),
-    confirmPassword: Yup.string()
-      .oneOf([Yup.ref("newPassword")], "Passwords must match")
-      .required("Please confirm your password"),
+    email: Yup.string()
+      .email("Invalid email address")
+      .required("Email is required"),
   });
 
-  const handleSubmit = async (values: any) => {
-    setIsSubmitting(true);
-    const resultAction = await dispatch(resetPassword(values));
-    setIsSubmitting(false);
-
-    if (resetPassword.fulfilled.match(resultAction)) {
-      toast.success("✅ Password reset successfully");
-      router.push("/auth/signin");
-    } else {
-      toast.error(`❌ ${resultAction.payload || "Password reset failed"}`);
+  const handleSubmit = async (values: any, { setSubmitting }: any) => {
+    try {
+      const resultAction = await dispatch(requestPasswordReset(values));
+      if (requestPasswordReset.fulfilled.match(resultAction)) {
+        toast.success("✅ Verification code sent");
+        const qp = new URLSearchParams();
+        qp.set("email", values.email);
+        if (tenantSlug) qp.set("tenant", tenantSlug);
+        router.push(`/auth/verify?${qp.toString()}`);
+      } else {
+        toast.error(`❌ ${resultAction.payload || "Email verification failed"}`);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -57,31 +54,31 @@ export function ResetPasswordForm() {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold leading-tight">
-                    Create new password
+                    Reset password
                   </h2>
                   <p className="text-xs text-white/80">
-                    Choose a strong password to secure your account.
+                    Enter your email to receive a verification code.
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-[11px] text-white/80">Step</div>
-                <div className="text-sm font-semibold">3 / 3</div>
+                <div className="text-sm font-semibold">1 / 3</div>
               </div>
             </div>
 
             <div className="mt-5">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold ring-1 bg-white/10 text-white ring-white/20">
+                <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold ring-1 bg-white text-[color:var(--brand-700)] ring-white/30">
                   1
                 </div>
                 <div className="flex-1 h-2 rounded-full bg-white/20 overflow-hidden">
-                  <div className="h-full bg-white/90" style={{ width: "100%" }} />
+                  <div className="h-full bg-white/90" style={{ width: "33%" }} />
                 </div>
                 <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold ring-1 bg-white/10 text-white ring-white/20">
                   2
                 </div>
-                <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold ring-1 bg-white text-[color:var(--brand-700)] ring-white/30">
+                <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold ring-1 bg-white/10 text-white ring-white/20">
                   3
                 </div>
               </div>
@@ -96,28 +93,17 @@ export function ResetPasswordForm() {
           <div className="px-6 py-6">
             <Formik
               initialValues={{
-                email: email,
-                code: code,
-                newPassword: "",
-                confirmPassword: "",
+                email: "",
               }}
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
-              enableReinitialize
             >
-              {() => (
+              {({ isSubmitting }) => (
                 <Form className="space-y-3">
                   <ApTextInput
-                    label="New password"
-                    name="newPassword"
-                    type="password"
-                    placeHolder="Enter new password"
-                  />
-                  <ApTextInput
-                    label="Confirm password"
-                    name="confirmPassword"
-                    type="password"
-                    placeHolder="Confirm new password"
+                    label="Email"
+                    name="email"
+                    placeHolder="Enter your email"
                   />
 
                   <ApButton
@@ -125,7 +111,7 @@ export function ResetPasswordForm() {
                     className="w-full bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)] text-white"
                     disabled={isSubmitting}
                     loading={isSubmitting}
-                    title={isSubmitting ? "Resetting..." : "Reset password"}
+                    title={isSubmitting ? "Processing..." : "Continue"}
                   />
                 </Form>
               )}
@@ -138,7 +124,7 @@ export function ResetPasswordForm() {
                     ? `/auth/signin?tenant=${encodeURIComponent(tenantSlug)}`
                     : "/auth/signin"
                 }
-                className="text-xs font-semibold brand-text hover:underline"
+                className="text-xs font-semibold text-slate-700 hover:text-slate-900"
               >
                 Back to sign in
               </Link>
@@ -149,7 +135,7 @@ export function ResetPasswordForm() {
                     ? `/auth/signup?tenant=${encodeURIComponent(tenantSlug)}`
                     : "/auth/signup"
                 }
-                className="text-xs font-semibold text-slate-700 hover:text-slate-900"
+                className="text-xs font-semibold brand-text hover:underline"
               >
                 Create account
               </Link>

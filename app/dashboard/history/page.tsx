@@ -5,7 +5,7 @@ import { fetchUserTransactions } from "@/redux/features/transaction/transactionS
 import { AppDispatch, RootState } from "@/redux/store";
 import { Filter, X } from "lucide-react";
 import Link from "next/link";
-import ApHomeHeader from "@/components/homeHeader";
+import ApHeader from "@/components/Apheader";
 import ApLoader from "@/components/loader";
 import { EmptyTransaction } from "@/components/empty";
 
@@ -37,17 +37,31 @@ export default function HistoryPage() {
     return d >= after;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "success":
-        return "text-[color:var(--brand-600)] bg-[color:var(--brand-100)]";
-      case "refund":
-        return "text-[color:var(--brand-600)] bg-[color:var(--brand-100)]";
-      case "failed":
-        return "text-red-500 bg-red-100";
-      default:
-        return "text-yellow-500 bg-yellow-100";
+  const getStatusBadge = (rawStatus: string) => {
+    const status = String(rawStatus || "pending").toLowerCase();
+    if (status === "success") {
+      return {
+        label: "SUCCESS",
+        className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+      };
     }
+    if (status === "refund" || status === "refunded") {
+      return {
+        label: "REFUNDED",
+        className:
+          "bg-[color:var(--brand-50)] text-[color:var(--brand-700)] ring-1 ring-[color:var(--brand-100)]",
+      };
+    }
+    if (status === "failed") {
+      return {
+        label: "FAILED",
+        className: "bg-rose-50 text-rose-700 ring-1 ring-rose-100",
+      };
+    }
+    return {
+      label: "PENDING",
+      className: "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
+    };
   };
 
   // Map UI "type" pill to actual `service` values in DB
@@ -135,21 +149,21 @@ export default function HistoryPage() {
   if (loading) return <ApLoader />;
 
   return (
-    <div>
-      {/* <ApHomeHeader /> */}
-      <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-50">
+      <ApHeader title="History" />
+      <div className="mx-auto w-full max-w-md">
         {/* Search + Filter Bar */}
-        <div className="sticky top-0 z-20 bg-white shadow-sm px-3 py-2 flex items-center gap-2">
+        <div className="sticky top-0 z-20 bg-white shadow-sm px-3 py-3 flex items-center gap-2">
           <input
             type="text"
             placeholder="Search (service, ref, note...)"
             value={productFilter}
             onChange={(e) => setProductFilter(e.target.value)}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none brand-focus-ring brand-focus-border bg-white"
           />
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 transition"
+            className="flex items-center gap-1 px-3 py-2 bg-slate-100 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-200 transition"
           >
             <Filter className="w-4 h-4" />
             Filters{activeFiltersCount ? ` • ${activeFiltersCount}` : ""}
@@ -158,7 +172,7 @@ export default function HistoryPage() {
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="bg-white p-3 shadow-md sticky top-[48px] z-20">
+          <div className="bg-white p-3 shadow-md sticky top-[56px] z-20">
             <div className="flex justify-between mb-3">
               <h3 className="font-semibold text-gray-700">
                 Filter Transactions
@@ -176,8 +190,8 @@ export default function HistoryPage() {
                   onClick={() => setStatusFilter(status)}
                   className={`px-4 py-1 rounded-full text-sm whitespace-nowrap ${
                     statusFilter === status
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-700"
+                      ? "bg-[color:var(--brand-600)] text-white"
+                      : "bg-slate-100 text-slate-700"
                   }`}
                 >
                   {status ? status[0].toUpperCase() + status.slice(1) : "All"}
@@ -197,8 +211,8 @@ export default function HistoryPage() {
                   onClick={() => setDateFilter(d.value)}
                   className={`px-4 py-1 rounded-full text-sm whitespace-nowrap ${
                     dateFilter === d.value
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-700"
+                      ? "bg-[color:var(--brand-600)] text-white"
+                      : "bg-slate-100 text-slate-700"
                   }`}
                 >
                   {d.label}
@@ -223,8 +237,8 @@ export default function HistoryPage() {
                   onClick={() => setTransactionTypeFilter(t.value)}
                   className={`px-4 py-1 rounded-full text-sm whitespace-nowrap ${
                     transactionTypeFilter === t.value
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-700"
+                      ? "bg-[color:var(--brand-600)] text-white"
+                      : "bg-slate-100 text-slate-700"
                   }`}
                 >
                   {t.label}
@@ -254,77 +268,57 @@ export default function HistoryPage() {
 
         {/* Transaction List */}
         {filteredTransactions?.length > 0 ? (
-          <div className="grid gap-4 mb-20 pt-4">
+          <div className="grid gap-3 px-3 pb-24 pt-4">
             {filteredTransactions.map((trans: any) => {
-              const status = trans?.status || "Pending";
+              const badge = getStatusBadge(trans?.status);
+              const amount = Number(trans?.amount || 0);
+              const service = String(trans?.service || "—");
+              const reference =
+                trans?.client_reference || trans?.reference_no || "—";
+
               return (
                 <Link
                   href={`/dashboard/transaction?request_id=${trans?._id}`}
                   key={trans?._id}
-                  className="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:shadow-md transition"
+                  className="bg-white rounded-2xl p-4 ring-1 ring-slate-100 shadow-sm hover:shadow-md transition"
                 >
-                  {/* Top Row - Status & Type */}
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-semibold text-gray-500">
-                      {trans?.transaction_type
-                        ? trans.transaction_type.charAt(0).toUpperCase() +
-                          trans.transaction_type.slice(1)
-                        : "Transaction"}
-                    </span>
-                    <div>
-
+                    <div className="text-xs font-semibold text-slate-600 capitalize">
+                      {service.replaceAll("_", " ")}
+                    </div>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                        status
-                      )}`}
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${badge.className}`}
                     >
-                      {status}
+                      {badge.label}
                     </span>
-
-                    { status === "failed" && ( <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                        "success"
-                      )}`}
-                    >
-                      refunded
-                    </span>)}
-                    </div>
-
                   </div>
 
-                  {/* Amount */}
-                  <div className="text-lg font-bold text-gray-900 mb-3">
-                    ₦{Number(trans?.amount || 0).toLocaleString()}
-                  </div>
-
-                  {/* Service */}
-                  <p className="text-gray-600 text-sm">
-                    <span className="font-medium">Service:</span>{" "}
-                    {trans?.service || "N/A"}
-                  </p>
-
-                  {/* Reference */}
-                  <p className="text-gray-600 text-sm">
-                    <span className="font-medium">Reference:</span>{" "}
-                    {trans?.reference_no || "N/A"}
-                  </p>
-
-                  {/* Balances */}
-                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-2">
-                    <div>
-                      <span className="font-medium">Previous Balance:</span> ₦
-                      {Number(trans?.previous_balance ?? 0).toLocaleString()}
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div className="text-lg font-extrabold text-[color:var(--brand-700)]">
+                      ₦{amount.toLocaleString()}
                     </div>
-                    <div>
-                      <span className="font-medium">New Balance:</span> ₦
-                      {Number(trans?.new_balance ?? 0).toLocaleString()}
+                    <div className="text-[11px] text-slate-500">
+                      {getTxnDate(trans).toLocaleString()}
                     </div>
                   </div>
 
-                  {/* Date */}
-                  <p className="text-gray-500 text-xs mt-2">
-                    {getTxnDate(trans).toLocaleString()}
-                  </p>
+                  <div className="mt-3 space-y-1">
+                    <div className="flex items-center justify-between gap-3 text-xs text-slate-600">
+                      <div>Reference</div>
+                      <div className="font-semibold text-slate-900 break-all text-right">
+                        {String(reference)}
+                      </div>
+                    </div>
+
+                    {trans?.mobile_no ? (
+                      <div className="flex items-center justify-between gap-3 text-xs text-slate-600">
+                        <div>Phone</div>
+                        <div className="font-semibold text-slate-900">
+                          {String(trans.mobile_no)}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 </Link>
               );
             })}

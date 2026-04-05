@@ -18,6 +18,7 @@ interface IProps {
   containerClassName?: string;
   onChange?: (val: string) => void;
   maxlength?: number;
+  stripSpaces?: boolean;
 }
 
 export const ApTextInput = forwardRef<
@@ -38,6 +39,7 @@ export const ApTextInput = forwardRef<
       disabled = false,
       ignoreFormik = false,
       maxlength,
+      stripSpaces = true,
     },
     ref
   ) => {
@@ -59,10 +61,10 @@ export const ApTextInput = forwardRef<
     const handleChange = (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
-      let value = e.target.value.replace(/\s+/g, ""); // removes all spaces
+      const nextValue = stripSpaces ? e.target.value.replace(/\s+/g, "") : e.target.value;
 
-      if (!ignoreFormik) formikField?.[2].setValue(value);
-      onChange?.(value);
+      if (!ignoreFormik) formikField?.[2].setValue(nextValue);
+      onChange?.(nextValue);
     };
 
     return (

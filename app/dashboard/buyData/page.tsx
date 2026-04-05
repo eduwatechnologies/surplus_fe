@@ -63,6 +63,8 @@ export default function EasyAccessBuyData() {
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [purchaseResult, setPurchaseResult] = useState<any | null>(null);
   const [formData, setFormData] = useState<any>(null);
   const [pinCode, setPinCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -244,18 +246,22 @@ export default function EasyAccessBuyData() {
       const resultAction = await dispatch(purchaseData(payload as any));
 
       if (purchaseData.fulfilled.match(resultAction)) {
-        toast.success("Data purchase successful!");
-        const { transactionId } = resultAction.payload;
-        router.push(`/dashboard/transaction?request_id=${transactionId}`);
+        setPurchaseResult({
+          success: true,
+          message: resultAction.payload?.message || "✅ Data purchase successful!",
+          transactionId: resultAction.payload?.transactionId,
+          transaction: resultAction.payload?.transaction || null,
+        });
+        setResultModalOpen(true);
       } else {
-        console.log(resultAction.payload);
-        toast.error(resultAction.payload?.error || "Purchase failed...!");
-        const transactionId = resultAction.payload?.transactionId;
-        if (transactionId) {
-          router.push(`/dashboard/transaction?request_id=${transactionId}`);
-        } else {
-          console.warn("⚠️ No transactionId returned for failed transaction.");
-        }
+        setPurchaseResult({
+          success: false,
+          message: resultAction.payload?.message || "❌ Data purchase failed",
+          error: resultAction.payload?.error,
+          transactionId: resultAction.payload?.transactionId,
+          transaction: resultAction.payload?.transaction || null,
+        });
+        setResultModalOpen(true);
       }
     } catch {
       toast.error("An unexpected error occurred");
@@ -272,19 +278,16 @@ export default function EasyAccessBuyData() {
       <ApHeader title="Buy Data" />
       <div className="flex flex-col items-center p-4">
         <div className="w-full max-w-md">
-
           <Formik
             initialValues={initialValues}
             validationSchema={validationSchema}
             onSubmit={() => {}}
             enableReinitialize
           >
+            {({ values, setFieldValue }) => (
               <Form className="flex flex-col">
                 <div className="grid grid-cols-4 gap-4 mb-4 shrink-0">
-                <div className="grid grid-cols-4 gap-4 mb-4">
                   {dataServices.map((service: any) => {
-                    const isDisabled = service.status === false;
-
                     const provider = normalizeNetwork(String(service.name || ""));
                     const isSelected = selectedNetwork === provider;
 
@@ -305,7 +308,6 @@ export default function EasyAccessBuyData() {
                           setFieldValue("planId", "");
                           setFieldValue("dataName", "");
                           setFieldValue("amount", "");
-
                           await loadPlansForNetwork(provider);
                         }}
                       >
@@ -379,90 +381,92 @@ export default function EasyAccessBuyData() {
                         />
                       </div>
                     ) : null}
+
                     <div
                       ref={plansScrollRef}
                       onScroll={updateScrollMeta}
                       className="plans-scroll h-full overflow-y-auto pr-4 overscroll-contain"
                     >
-                    <div className="grid grid-cols-3 gap-3">
-                      {plansLoading ? (
-                        <div className="col-span-3 py-6 text-center text-sm text-gray-500">
-                          Loading plans...
-                        </div>
-                      ) : null}
-                      {visiblePlans.map((p: any, i: number) => {
-                        const isActive = selectedPlan?._id === p?._id;
-                        const planName = String(
-                          p?.name || p?.dataName || p?.planName || ""
-                        );
-                        const planPrice = Number(
-                          p?.ourPrice ?? p?.amount ?? p?.price ?? 0
-                        );
-                        const sizeText =
-                          planName
-                            .match(/\d+(?:\.\d+)?\s*(GB|MB)/i)?.[0]
-                            ?.replace(/\s+/g, "")
-                            .toUpperCase() || planName;
+                      <div className="grid grid-cols-3 gap-3">
+                        {plansLoading ? (
+                          <div className="col-span-3 py-6 text-center text-sm text-gray-500">
+                            Loading plans...
+                          </div>
+                        ) : null}
 
-                        return (
-                          <button
-                            key={p?._id || i}
-                            type="button"
-                            className={`text-left bg-gray-50 border rounded-2xl p-4 transition ${
-                              isActive
-                                ? "border-[color:var(--brand-700)] bg-[color:var(--brand-50)]"
-                                : "border-gray-200 hover:border-gray-300"
-                            }`}
-                            onClick={() => {
-                              if (!/^\d{11}$/.test(values.phone || "")) {
-                                toast.error(
-                                  "Enter a valid 11-digit phone number"
-                                );
-                                return;
-                              }
+                        {visiblePlans.map((p: any, i: number) => {
+                          const isActive = selectedPlan?._id === p?._id;
+                          const planName = String(
+                            p?.name || p?.dataName || p?.planName || ""
+                          );
+                          const planPrice = Number(
+                            p?.ourPrice ?? p?.amount ?? p?.price ?? 0
+                          );
+                          const sizeText =
+                            planName
+                              .match(/\d+(?:\.\d+)?\s*(GB|MB)/i)?.[0]
+                              ?.replace(/\s+/g, "")
+                              .toUpperCase() || planName;
 
-                              setSelectedPlan(p);
-                              setFieldValue("planId", p._id);
-                              setFieldValue("dataName", planName);
-                              setFieldValue("amount", planPrice);
-                              setFormData({
-                                ...values,
-                                planId: p._id,
-                                dataName: planName,
-                                amount: planPrice,
-                                network: selectedNetwork,
-                              });
-                              setPinCode("");
-                              setPreviewModalOpen(true);
-                            }}
-                          >
-                            <div className="flex flex-col items-center justify-center text-center gap-2">
-                              <div className="text-base font-semibold">
-                                {sizeText}
-                              </div>
-                              <div className="inline-flex items-center justify-center bg-[color:var(--brand-50)] text-[color:var(--brand-700)] text-xs px-3 py-1 rounded-full">
-                                {p.validity || "—"}
-                              </div>
-                              <div className="text-[color:var(--brand-700)] font-semibold whitespace-nowrap">
-                                ₦{Number(planPrice || 0).toLocaleString()}
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
+                          return (
+                            <button
+                              key={p?._id || i}
+                              type="button"
+                              className={`text-left bg-gray-50 border rounded-2xl p-4 transition ${
+                                isActive
+                                  ? "border-[color:var(--brand-700)] bg-[color:var(--brand-50)]"
+                                  : "border-gray-200 hover:border-gray-300"
+                              }`}
+                              onClick={() => {
+                                if (!/^\d{11}$/.test(values.phone || "")) {
+                                  toast.error(
+                                    "Enter a valid 11-digit phone number"
+                                  );
+                                  return;
+                                }
 
-                      {!visiblePlans.length ? (
-                        <div className="col-span-3 py-6 text-center text-sm text-gray-500">
-                          {plansError
-                            ? String(plansError)
-                            : selectedNetwork
-                              ? "No plans found for this tab."
-                              : "Select a network to see plans."}
-                        </div>
-                      ) : null}
+                                setSelectedPlan(p);
+                                setFieldValue("planId", p._id);
+                                setFieldValue("dataName", planName);
+                                setFieldValue("amount", planPrice);
+                                setFormData({
+                                  ...values,
+                                  planId: p._id,
+                                  dataName: planName,
+                                  amount: planPrice,
+                                  network: selectedNetwork,
+                                });
+                                setPinCode("");
+                                setPreviewModalOpen(true);
+                              }}
+                            >
+                              <div className="flex flex-col items-center justify-center text-center gap-2">
+                                <div className="text-base font-semibold">
+                                  {sizeText}
+                                </div>
+                                <div className="inline-flex items-center justify-center bg-[color:var(--brand-50)] text-[color:var(--brand-700)] text-xs px-3 py-1 rounded-full">
+                                  {p.validity || "—"}
+                                </div>
+                                <div className="text-[color:var(--brand-700)] font-semibold whitespace-nowrap">
+                                  ₦{Number(planPrice || 0).toLocaleString()}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+
+                        {!visiblePlans.length ? (
+                          <div className="col-span-3 py-6 text-center text-sm text-gray-500">
+                            {plansError
+                              ? String(plansError)
+                              : selectedNetwork
+                                ? "No plans found for this tab."
+                                : "Select a network to see plans."}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
                 </div>
 
                 {previewModalOpen && formData ? (
@@ -577,6 +581,92 @@ export default function EasyAccessBuyData() {
                           disabled={loading || pinCode.length !== 4}
                           type="button"
                           onClick={() => formData && handleFormSubmit(formData)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {resultModalOpen && (
+                  <div
+                    className="fixed inset-0 bg-black/40 flex items-center justify-center p-4"
+                    onClick={(e) =>
+                      e.target === e.currentTarget && setResultModalOpen(false)
+                    }
+                  >
+                    <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-lg ring-1 ring-slate-100">
+                      <div className="text-center">
+                        <div
+                          className={`mx-auto inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                            purchaseResult?.success
+                              ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                              : "bg-rose-50 text-rose-700 ring-1 ring-rose-100"
+                          }`}
+                        >
+                          {purchaseResult?.success ? "SUCCESS" : "FAILED"}
+                        </div>
+                        <h2 className="mt-3 text-base font-semibold text-slate-900">
+                          {purchaseResult?.message || "Transaction update"}
+                        </h2>
+                        {purchaseResult?.error ? (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {purchaseResult.error}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-xs text-slate-500">
+                            Transaction ID
+                          </div>
+                          <div className="text-xs font-semibold text-slate-900 break-all text-right">
+                            {purchaseResult?.transactionId || "—"}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-xs text-slate-500">Amount</div>
+                          <div className="text-sm font-semibold text-slate-900">
+                            ₦
+                            {Number(
+                              purchaseResult?.transaction?.amount ??
+                                (selectedPlan?.ourPrice
+                                  ? Number(selectedPlan.ourPrice)
+                                  : 0)
+                            ).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-xs text-slate-500">Date</div>
+                          <div className="text-xs font-semibold text-slate-900 text-right">
+                            {purchaseResult?.transaction?.createdAt
+                              ? new Date(
+                                  purchaseResult.transaction.createdAt
+                                ).toLocaleString()
+                              : new Date().toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 mt-4">
+                        <ApButton
+                          title="Close"
+                          className="w-1/2 bg-gray-100 text-gray-600"
+                          onClick={() => setResultModalOpen(false)}
+                          type="button"
+                        />
+                        <ApButton
+                          title="View details"
+                          className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)] text-white"
+                          disabled={!purchaseResult?.transactionId}
+                          type="button"
+                          onClick={() => {
+                            if (!purchaseResult?.transactionId) return;
+                            setResultModalOpen(false);
+                            router.push(
+                              `/dashboard/transaction?request_id=${purchaseResult.transactionId}`
+                            );
+                          }}
                         />
                       </div>
                     </div>

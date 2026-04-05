@@ -23,6 +23,8 @@ export default function BuyExam() {
   const [pinCode, setPinCode] = useState("");
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [purchaseResult, setPurchaseResult] = useState<any | null>(null);
   const [formData, setFormData] = useState<any | null>(null);
 
   // amount & unit price start at 0 so we don't get NaN
@@ -85,15 +87,33 @@ export default function BuyExam() {
     };
 
     setLoading(true);
-    const resultAction = await dispatch(purchaseExam({ payload }));
-    setLoading(false);
+    try {
+      const resultAction = await dispatch(purchaseExam({ payload }));
 
-    if (purchaseExam.fulfilled.match(resultAction)) {
-      const { request_id } = resultAction.payload;
-      toast.success("✅ Exam purchase successful!");
-      router.push(`/dashboard/transaction?request_id=${request_id}`);
-    } else {
-      toast.error(`❌ ${resultAction.payload || "Exam purchase failed!"}`);
+      if (purchaseExam.fulfilled.match(resultAction)) {
+        setPurchaseResult({
+          success: true,
+          message:
+            resultAction.payload?.message || "✅ Exam purchase successful!",
+          transactionId: resultAction.payload?.transactionId,
+          transaction: resultAction.payload?.transaction || null,
+        });
+        setResultModalOpen(true);
+      } else {
+        setPurchaseResult({
+          success: false,
+          message: resultAction.payload?.message || "❌ Exam purchase failed",
+          error: resultAction.payload?.error,
+          transactionId: resultAction.payload?.transactionId,
+          transaction: resultAction.payload?.transaction || null,
+        });
+        setResultModalOpen(true);
+      }
+    } finally {
+      setLoading(false);
+      setPinModalOpen(false);
+      setPreviewModalOpen(false);
+      setPinCode("");
     }
   };
 
@@ -360,6 +380,86 @@ export default function BuyExam() {
                 className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
                 disabled={loading || pinCode.length !== 4}
                 onClick={() => formData && handleFormSubmit(formData)}
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resultModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4"
+          onClick={(e) =>
+            e.target === e.currentTarget && setResultModalOpen(false)
+          }
+        >
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-lg ring-1 ring-slate-100">
+            <div className="text-center">
+              <div
+                className={`mx-auto inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                  purchaseResult?.success
+                    ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                    : "bg-rose-50 text-rose-700 ring-1 ring-rose-100"
+                }`}
+              >
+                {purchaseResult?.success ? "SUCCESS" : "FAILED"}
+              </div>
+              <h2 className="mt-3 text-base font-semibold text-slate-900">
+                {purchaseResult?.message || "Transaction update"}
+              </h2>
+              {purchaseResult?.error ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  {purchaseResult.error}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Transaction ID</div>
+                <div className="text-xs font-semibold text-slate-900 break-all text-right">
+                  {purchaseResult?.transactionId || "—"}
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Amount</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  ₦
+                  {Number(
+                    purchaseResult?.transaction?.amount ??
+                      (formData?.quantity ? Number(formData.quantity) * unitPrice : 0)
+                  ).toLocaleString()}
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-slate-500">Date</div>
+                <div className="text-xs font-semibold text-slate-900 text-right">
+                  {purchaseResult?.transaction?.createdAt
+                    ? new Date(purchaseResult.transaction.createdAt).toLocaleString()
+                    : new Date().toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <ApButton
+                title="Close"
+                className="w-1/2"
+                onClick={() => setResultModalOpen(false)}
+                type="button"
+              />
+              <ApButton
+                title="View details"
+                className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
+                disabled={!purchaseResult?.transactionId}
+                onClick={() => {
+                  if (!purchaseResult?.transactionId) return;
+                  setResultModalOpen(false);
+                  router.push(
+                    `/dashboard/transaction?request_id=${purchaseResult.transactionId}`
+                  );
+                }}
                 type="button"
               />
             </div>

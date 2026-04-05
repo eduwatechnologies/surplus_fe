@@ -13,6 +13,29 @@ interface PlansResponse {
   plans: any[]; // now a flat array from your DB, each with id, name, price etc.
 }
 
+export interface TransactionSummary {
+  _id: string;
+  service?: string;
+  status?: string;
+  message?: string;
+  amount?: number;
+  reference_no?: string;
+  provider_reference?: string;
+  createdAt?: string;
+  network?: string;
+  mobile_no?: string;
+  data_type?: string;
+  company?: string;
+  meter_type?: string;
+  meter_no?: string;
+  token?: string;
+  customer_name?: string;
+  iucno?: string;
+  package?: string;
+  previous_balance?: number;
+  new_balance?: number;
+}
+
 export interface Electricity {
   company: string;
   metertype: string;
@@ -23,18 +46,20 @@ export interface Electricity {
 
 // typescript types
 type PurchaseAirtimePayload = {
-  planId: string;
   phone: string;
   userId: string;
   pinCode: string;
-  amount: string;
+  amount: number;
   airtimeType: string;
+  networkId: string;
 };
 
 type PurchaseAirtimeResponse = {
   message?: string;
   error?: string;
   transactionId: string;
+  transaction?: TransactionSummary | null;
+  success?: boolean;
 };
 
 // --- Async Thunks ---
@@ -95,7 +120,12 @@ export const fetchDataCategories = createAsyncThunk<
 
 // Purchase data bundle
 export const purchaseData = createAsyncThunk<
-  { message: string; transactionId: string }, // 👈 include transactionId
+  {
+    message: string;
+    transactionId: string;
+    transaction?: TransactionSummary | null;
+    success?: boolean;
+  },
   {
     planId: string;
     phone: string;
@@ -105,7 +135,15 @@ export const purchaseData = createAsyncThunk<
     dataType?: string;
     amount?: string;
   },
-  { rejectValue: { message: string; transactionId?: string; error: string } }
+  {
+    rejectValue: {
+      message: string;
+      transactionId?: string;
+      transaction?: TransactionSummary | null;
+      error: string;
+      success?: boolean;
+    };
+  }
 >("dataPlans/purchaseData", async (payload, { rejectWithValue }) => {
   try {
     const response = await axiosInstance.post(
@@ -116,6 +154,8 @@ export const purchaseData = createAsyncThunk<
     return {
       message: response.data.message,
       transactionId: response.data.transactionId,
+      transaction: response.data.transaction,
+      success: response.data.success,
     };
   } catch (err: any) {
     const errorData = err?.response?.data;
@@ -124,12 +164,19 @@ export const purchaseData = createAsyncThunk<
       message: errorData?.message || "Purchase failed",
       error: errorData.error,
       transactionId: errorData?.transactionId || "",
+      transaction: errorData?.transaction || null,
+      success: errorData?.success,
     });
   }
 });
 
 export const purchaseAirtime = createAsyncThunk<
-  { message: string; transactionId: string }, // 👈 include transactionId
+  {
+    message: string;
+    transactionId: string;
+    transaction?: TransactionSummary | null;
+    success?: boolean;
+  },
   PurchaseAirtimePayload,
   { rejectValue: PurchaseAirtimeResponse }
 >("dataPlans/purchaseAirtime", async (payload, { rejectWithValue }) => {
@@ -141,6 +188,8 @@ export const purchaseAirtime = createAsyncThunk<
     return {
       message: response.data.message,
       transactionId: response.data.transactionId,
+      transaction: response.data.transaction,
+      success: response.data.success,
     };
   } catch (err: any) {
     const errorData = err?.response?.data;
@@ -149,6 +198,8 @@ export const purchaseAirtime = createAsyncThunk<
       message: errorData?.message || "Purchase failed",
       error: errorData.error,
       transactionId: errorData?.transactionId || "",
+      transaction: errorData?.transaction || null,
+      success: errorData?.success,
     });
   }
 });
@@ -171,22 +222,47 @@ export const handleVerifyTvSub = createAsyncThunk(
   }
 );
 
-export const purchaseTvSub = createAsyncThunk(
-  "dataPlans/purchaseTvSub",
-  async ({ payload }: { payload: any }, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.post(
-        "/easyaccess/purchase-tvsub",
-        payload
-      );
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.error || "Cable subscription failed"
-      );
-    }
+export const purchaseTvSub = createAsyncThunk<
+  {
+    message: string;
+    transactionId: string;
+    request_id?: string;
+    transaction?: TransactionSummary | null;
+    success?: boolean;
+  },
+  { payload: any },
+  {
+    rejectValue: {
+      message: string;
+      transactionId?: string;
+      request_id?: string;
+      transaction?: TransactionSummary | null;
+      error?: string;
+      success?: boolean;
+    };
   }
-);
+>("dataPlans/purchaseTvSub", async ({ payload }, { rejectWithValue }) => {
+  try {
+    const response = await axiosInstance.post("/easyaccess/purchase-tvsub", payload);
+    return {
+      message: response.data.message,
+      transactionId: response.data.transactionId || response.data.request_id,
+      request_id: response.data.request_id,
+      transaction: response.data.transaction,
+      success: response.data.success,
+    };
+  } catch (err: any) {
+    const errorData = err?.response?.data;
+    return rejectWithValue({
+      message: errorData?.message || "Cable subscription failed",
+      error: errorData?.error,
+      transactionId: errorData?.transactionId || errorData?.request_id || "",
+      request_id: errorData?.request_id,
+      transaction: errorData?.transaction || null,
+      success: errorData?.success,
+    });
+  }
+});
 
 // Verify meter (unchanged)
 export const handleVerifyMeter = createAsyncThunk(
@@ -207,9 +283,22 @@ export const handleVerifyMeter = createAsyncThunk(
 );
 
 export const purchaseElectricity = createAsyncThunk<
-  { message: string; transactionId: string },
+  {
+    message: string;
+    transactionId: string;
+    transaction?: TransactionSummary | null;
+    success?: boolean;
+  },
   PurchaseAirtimePayload,
-  { rejectValue: { message: string; transactionId?: string; error: string } }
+  {
+    rejectValue: {
+      message: string;
+      transactionId?: string;
+      transaction?: TransactionSummary | null;
+      error: string;
+      success?: boolean;
+    };
+  }
 >("dataPlans/purchaseElectricity", async (payload, { rejectWithValue }) => {
   try {
     const response = await axiosInstance.post(
@@ -220,6 +309,8 @@ export const purchaseElectricity = createAsyncThunk<
     return {
       message: response.data.message,
       transactionId: response.data.transactionId,
+      transaction: response.data.transaction,
+      success: response.data.success,
     };
   } catch (err: any) {
     const errorData = err?.response?.data;
@@ -228,26 +319,55 @@ export const purchaseElectricity = createAsyncThunk<
       message: errorData?.message || "Purchase failed",
       error: errorData.error,
       transactionId: errorData?.transactionId || "",
+      transaction: errorData?.transaction || null,
+      success: errorData?.success,
     });
   }
 });
 
-export const purchaseExam = createAsyncThunk(
-  "dataPlans/purchaseExam",
-  async ({ payload }: { payload: any }, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.post(
-        "/easyaccess/purchase-exam",
-        payload
-      );
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.error || "Purchase exam failed"
-      );
-    }
+export const purchaseExam = createAsyncThunk<
+  {
+    message: string;
+    transactionId: string;
+    request_id?: string;
+    transaction?: TransactionSummary | null;
+    success?: boolean;
+    data?: any;
+  },
+  { payload: any },
+  {
+    rejectValue: {
+      message: string;
+      transactionId?: string;
+      request_id?: string;
+      transaction?: TransactionSummary | null;
+      error?: string;
+      success?: boolean;
+    };
   }
-);
+>("dataPlans/purchaseExam", async ({ payload }, { rejectWithValue }) => {
+  try {
+    const response = await axiosInstance.post("/easyaccess/purchase-exam", payload);
+    return {
+      message: response.data.message,
+      transactionId: response.data.transactionId || response.data.request_id,
+      request_id: response.data.request_id,
+      transaction: response.data.transaction,
+      success: response.data.success,
+      data: response.data.data,
+    };
+  } catch (err: any) {
+    const errorData = err?.response?.data;
+    return rejectWithValue({
+      message: errorData?.message || "Purchase exam failed",
+      error: errorData?.error,
+      transactionId: errorData?.transactionId || errorData?.request_id || "",
+      request_id: errorData?.request_id,
+      transaction: errorData?.transaction || null,
+      success: errorData?.success,
+    });
+  }
+});
 
 export const getDataServices = createAsyncThunk(
   "services/getDataServices",
