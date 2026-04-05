@@ -25,6 +25,16 @@ interface WalletSliceState {
   error: string | null;
 }
 
+const normalizeVirtualAccount = (raw: any): VirtualAccount => {
+  return {
+    id: String(raw?.id ?? raw?._id ?? ""),
+    userId: String(raw?.userId ?? raw?.user ?? ""),
+    bankName: String(raw?.bankName ?? ""),
+    accountNumber: String(raw?.accountNumber ?? ""),
+    accountName: String(raw?.accountName ?? ""),
+  };
+};
+
 
 // ✅ Create virtual account thunk
 export const createVirtualAccount = createAsyncThunk(
@@ -33,12 +43,12 @@ export const createVirtualAccount = createAsyncThunk(
     try {
       const response = await axiosInstance.post("/wallets/create-virtual-account", data);
       if (!response.data.success) {
-        return rejectWithValue(response.data.message || "Failed to create virtual account");
+        return rejectWithValue(response.data.message || response.data.error || "Failed to create virtual account");
       }
-      return response.data.data;
+      return normalizeVirtualAccount(response.data.account);
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to create virtual account"
+        error.response?.data?.message || error.response?.data?.error || "Failed to create virtual account"
       );
     }
   }
@@ -50,10 +60,11 @@ export const getVirtualAccounts = createAsyncThunk(
   async (userId: string, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(`/wallets/virtual-account/${userId}`);
-      return response.data.accounts;
+      const accounts = Array.isArray(response.data.accounts) ? response.data.accounts : [];
+      return accounts.map(normalizeVirtualAccount);
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch virtual accounts"
+        error.response?.data?.message || error.response?.data?.error || "Failed to fetch virtual accounts"
       );
     }
   }

@@ -19,7 +19,6 @@ import { detectNetwork } from "@/utils/networkChecker";
 interface FormValues {
   phone: string;
   amount: string;
-  network: string;
 }
 
 const validationSchema = Yup.object({
@@ -34,10 +33,12 @@ const validationSchema = Yup.object({
 
 export default function BuyAirtime() {
   const [loading, setLoading] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [formData, setFormData] = useState<FormValues | null>(null);
   const [pinCode, setPinCode] = useState("");
   const [selectedNetwork, setSelectedNetwork] = useState<string>("");
+  const amountPresets = [100, 200, 500, 1000, 2000, 5000] as const;
 
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -52,9 +53,14 @@ export default function BuyAirtime() {
     dispatch(getDataServices("airtime"));
   }, [dispatch]);
 
-  const handleFormSubmit = async (values: any) => {
+  const handleFormSubmit = async (values: FormValues) => {
     if (!pinCode || pinCode.length !== 4) {
       toast.error("Please enter a valid 4-digit PIN");
+      return;
+    }
+
+    if (!selectedNetwork) {
+      toast.error("Please select a network");
       return;
     }
 
@@ -64,6 +70,7 @@ export default function BuyAirtime() {
       userId: user?._id,
       amount: Number(values.amount),
       pinCode,
+      airtimeType: "VTU",
     };
 
     setLoading(true);
@@ -86,6 +93,7 @@ export default function BuyAirtime() {
     } finally {
       setLoading(false);
       setPinModalOpen(false);
+      setPreviewModalOpen(false);
       setPinCode("");
     }
   };
@@ -93,23 +101,29 @@ export default function BuyAirtime() {
   return (
     <div className="min-h-screen bg-white">
       <ApHeader title="Buy Airtime" />
-      <div className="flex bg-gray-100">
-        <div className="bg-white p-6 w-full max-w-md">
-          <p className="text-sm text-gray-600 text-center py-2 mb-4">
+      <div className="flex bg-[color:var(--brand-50)]">
+        <div className="bg-white p-6 w-full max-w-md rounded-2xl shadow-sm ring-1 ring-slate-100">
+          <p className="text-sm text-slate-600 text-center py-2 mb-4">
             Select your network, enter your number and amount, and complete with
             your PIN.
           </p>
 
           <Formik
-            initialValues={{ phone: "", amount: "", network: "" }}
+            initialValues={{ phone: "", amount: "100" }}
             validationSchema={validationSchema}
             onSubmit={() => {}}
           >
-            {({ values, setFieldValue, isValid, dirty }) => {
+            {({ values, setFieldValue, isValid }) => {
               const discountPercentage = 2;
               const discount =
                 (Number(values.amount) * discountPercentage) / 100;
               const finalAmount = Math.max(0, Number(values.amount) - discount);
+              const selectedService = dataServices.find((service: any) => {
+                const provider = String(service?.name || "")
+                  .split(" ")[0]
+                  .toLowerCase();
+                return provider === selectedNetwork;
+              });
 
               return (
                 <Form>
@@ -121,18 +135,14 @@ export default function BuyAirtime() {
                         type="button"
                         className={`flex items-center justify-center p-3 border-2 rounded-xl ${
                           selectedNetwork === service.name
-                            ? "border-blue-500"
-                            : "border-gray-200"
+                            ? "border-[color:var(--brand-700)] "
+                            : "border-slate-200"
                         }`}
                         onClick={() => {
                           const provider = service.name
                             .split(" ")[0]
                             .toLowerCase();
                           setSelectedNetwork(provider);
-                          setFieldValue(
-                            "network",
-                            service.name.split(" ")[0].toUpperCase()
-                          );
                         }}
                       >
                         <img
@@ -143,14 +153,6 @@ export default function BuyAirtime() {
                       </button>
                     ))}
                   </div>
-
-                  <ApTextInput
-                    label="Network"
-                    name="network"
-                    placeHolder="Select network"
-                    readOnly={true}
-                    value={values.network}
-                  />
 
                   <ApTextInput
                     label="Phone Number"
@@ -166,6 +168,26 @@ export default function BuyAirtime() {
                     placeHolder="Enter amount between ₦100 - ₦50,000"
                   />
 
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {amountPresets.map((amt) => {
+                      const active = String(values.amount || "") === String(amt);
+                      return (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => setFieldValue("amount", String(amt))}
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 transition ${
+                            active
+                              ? "bg-[color:var(--brand-600)] text-white ring-[color:var(--brand-600)]"
+                              : "bg-white text-slate-700 ring-slate-200 hover:bg-[color:var(--brand-50)]"
+                          }`}
+                        >
+                          ₦{amt}
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <div className="mt-1 text-md font-semibold">
                     Final Amount: ₦{finalAmount}
                   </div>
@@ -173,13 +195,77 @@ export default function BuyAirtime() {
                   <ApButton
                     type="button"
                     className="w-full mt-4"
-                    disabled={loading || !isValid || !dirty}
+                    disabled={loading || !isValid || !selectedNetwork}
                     onClick={() => {
-                      setFormData({ ...values });
-                      setPinModalOpen(true);
+                      if (!selectedNetwork) {
+                        toast.error("Please select a network");
+                        return;
+                      }
+                      setFormData({ phone: values.phone, amount: values.amount });
+                      setPreviewModalOpen(true);
                     }}
                     title="Continue"
                   />
+
+                  {previewModalOpen && formData && (
+                    <div
+                      className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4"
+                      onClick={(e) => e.target === e.currentTarget && setPreviewModalOpen(false)}
+                    >
+                      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-100">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h2 className="text-base font-semibold text-slate-900">Confirm purchase</h2>
+                            <p className="mt-0.5 text-xs text-slate-500">Review details before entering your PIN.</p>
+                          </div>
+                          {selectedService?.image ? (
+                            <img src={selectedService.image} alt={selectedService.name} className="h-10 w-10 rounded-xl bg-slate-50 p-2 ring-1 ring-slate-100" />
+                          ) : null}
+                        </div>
+
+                        <div className="mt-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-xs text-slate-500">Network</div>
+                            <div className="text-sm font-semibold text-slate-900">{selectedNetwork.toUpperCase()}</div>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <div className="text-xs text-slate-500">Phone</div>
+                            <div className="text-sm font-semibold text-slate-900">{formData.phone || "—"}</div>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <div className="text-xs text-slate-500">Amount</div>
+                            <div className="text-sm font-semibold text-slate-900">₦{Number(formData.amount || 0).toLocaleString()}</div>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <div className="text-xs text-slate-500">Discount</div>
+                            <div className="text-sm font-semibold text-slate-900">₦{Number(discount || 0).toLocaleString()}</div>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <div className="text-xs text-slate-500">Final</div>
+                            <div className="text-sm font-extrabold text-[color:var(--brand-700)]">₦{Number(finalAmount || 0).toLocaleString()}</div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex gap-3">
+                          <ApButton
+                            title="Edit"
+                            className="w-1/2"
+                            onClick={() => setPreviewModalOpen(false)}
+                            type="button"
+                          />
+                          <ApButton
+                            title="Proceed"
+                            className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
+                            onClick={() => {
+                              setPreviewModalOpen(false);
+                              setPinModalOpen(true);
+                            }}
+                            type="button"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </Form>
               );
             }}
@@ -195,7 +281,7 @@ export default function BuyAirtime() {
             e.target === e.currentTarget && setPinModalOpen(false)
           }
         >
-          <div className="bg-white p-6 rounded-lg w-full max-w-sm">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-lg ring-1 ring-slate-100">
             <h2 className="text-lg font-semibold mb-4 text-center">
               Enter Transaction PIN
             </h2>
@@ -208,7 +294,7 @@ export default function BuyAirtime() {
                 }
               }}
               maxLength={4}
-              className="w-full p-2 border-2 border-gray-300 rounded-lg mb-4 text-center text-xl tracking-widest focus:border-blue-500 focus:outline-none"
+              className="w-full p-2 border-2 border-slate-200 rounded-xl mb-4 text-center text-xl tracking-widest focus:border-[color:var(--brand-600)] focus:outline-none"
               placeholder="••••"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -226,7 +312,7 @@ export default function BuyAirtime() {
               />
               <ApButton
                 title={loading ? "Processing..." : "Submit"}
-                className="w-1/2 bg-blue-600 hover:bg-blue-700"
+                className="w-1/2 bg-[color:var(--brand-600)] hover:bg-[color:var(--brand-700)]"
                 disabled={loading || pinCode.length !== 4}
                 onClick={() => formData && handleFormSubmit(formData)}
                 type="button"

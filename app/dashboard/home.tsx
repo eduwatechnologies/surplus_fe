@@ -232,9 +232,9 @@ export const HomeDashboard = () => {
                     <div
                       key={acc.id || `${acc.bankName}-${acc.accountNumber}`}
                       data-acc-index={idx}
-                      className="w-full "
+                      className="w-80 "
                     >
-                      <div className="relative overflow-hidden rounded-2xl p-5 text-white shadow-sm [background:linear-gradient(135deg,var(--brand-200),var(--brand-600))]">
+                      <div className="relative  rounded-2xl p-5 text-white shadow-sm [background:linear-gradient(135deg,var(--brand-200),var(--brand-600))]">
                             <div className="text-base items-center font-semibold leading-tight text-center">{acc.bankName}</div>
                              <div className="text-sm font-semibold text-center">{acc.accountName}</div>
 
@@ -261,7 +261,7 @@ export const HomeDashboard = () => {
            
             </div>
 
-            <div className="mt-1 mb-2 flex items-center justify-center gap-2">
+            <div className="mt-1  mb-2 flex items-center justify-center gap-2">
               {accounts.map((acc: any, idx: number) => (
                 <button
                   key={acc.id || idx}
@@ -270,7 +270,7 @@ export const HomeDashboard = () => {
                     setAccountIndex(idx);
                     requestAnimationFrame(() => scrollToAccountIndex(idx));
                   }}
-                  className={`h-2.5 rounded-full transition-all ${
+                  className={`h-2.5 rounded-full transition-all mb-3 ${
                     idx === accountIndex ? "w-7 bg-[color:var(--brand-600)]" : "w-2.5 bg-slate-300 hover:bg-slate-400"
                   }`}
                   aria-label={`Account ${idx + 1}`}
@@ -295,7 +295,7 @@ export const HomeDashboard = () => {
       <div className="mb-2 flex items-end justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-gray-800">Quick Actions</h2>
-          <p className="text-xs text-gray-500">Pay bills and top up instantly.</p>
+          {/* <p className="text-xs text-gray-500">Pay bills and top up instantly.</p> */}
         </div>
         <Link href="/dashboard/history" className="text-xs font-semibold brand-text hover:underline">
           View history
