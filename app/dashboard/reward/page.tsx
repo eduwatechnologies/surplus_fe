@@ -19,7 +19,7 @@ export default function Profile() {
 
   return (
     <div className="">
-      <ApHomeHeader />
+      {/* <ApHomeHeader /> */}
 
       <div className="bg-white shadow-lg rounded-xl p-6 mt-6 w-full max-w-md">
         <h2 className="text-lg font-bold text-gray-800">Refer & Earn</h2>

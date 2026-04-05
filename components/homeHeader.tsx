@@ -48,7 +48,7 @@ const ApHomeHeader = () => {
 <div className="flex items-center justify-between px-4 py-2 bg-white rounded-xl shadow-sm mb-2">
   {/* Left - Greeting and Name */}
   <div className="flex items-center gap-3">
-    <div className="p-2 rounded-full brand-soft-bg brand-text">
+    <div className="p-2 rounded-full bg-emerald-100 text-emerald-700">
       {greeting?.icon}
     </div>
     <div>

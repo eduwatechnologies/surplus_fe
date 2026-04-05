@@ -5,8 +5,10 @@ import Link from "next/link";
 
 const navItems = [
   { id: 1, icon: Home, link: "/dashboard", label: "Home" },
-  { id: 2, icon: Clock, link: "/dashboard/history", label: "History" },
-  { id: 3, icon: Wallet2, link: "/dashboard/reward", label: "Reward" },
+    { id: 2, icon: Wallet2, link: "/dashboard/wallet", label: "Wallet" },
+  { id: 3, icon: Clock, link: "/dashboard/history", label: "History" },
+
+  // { id: 4, icon: Wallet2, link: "/dashboard/reward", label: "Reward" },
   { id: 4, icon: User, link: "/dashboard/profile", label: "Profile" },
 ];
 
@@ -14,7 +16,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg flex justify-between items-center border border-gray-200 w-[95%] max-w-[420px] z-50">
+    <nav className="fixed bottom-1 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2  shadow-lg flex justify-between items-center border border-gray-200 w-[95%] max-w-[420px] z-50">
       {navItems.map((nav) => {
         const isActive = pathname === nav.link;
 

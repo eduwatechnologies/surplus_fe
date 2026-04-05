@@ -50,7 +50,7 @@ export default function Profile() {
 
   return (
     <div className="">
-      <ApHomeHeader />
+      {/* <ApHomeHeader /> */}
       {/* Menu */}
       <div className="bg-white shadow-lg rounded-xl p-4 pt-0 w-full max-w-md">
         {menuItems.map((item) =>

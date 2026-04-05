@@ -1,22 +1,20 @@
-import { HeroSection } from "./home/heroSection";
-import { ServiceSection } from "./home/serviceSection";
-import { TestimonialsSection } from "./home/testimonalSection";
-import HomeLayout from "./homeLayout";
-import { StatsSection } from "./home/statsSection";
-import { FaqSection } from "./home/faqSection";
-import { CtaSection } from "./home/ctaSection";
-import GoogleAd from "./googleads";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { MerchantStorefrontView } from "./m/[slug]/page";
 
-export default function Home() {
-  return (
-    <HomeLayout>
-      <HeroSection />
-      <ServiceSection />
-      <StatsSection />
-      <TestimonialsSection />
-      <FaqSection />
-      <CtaSection />
-      <GoogleAd slot="5872708392333567" />
-    </HomeLayout>
-  );
+export default async function Home() {
+  const h = await headers();
+  const rawHost = (h.get("x-forwarded-host") || h.get("host") || "").trim();
+  const host = rawHost.split(",")[0].split(":")[0].toLowerCase();
+  const baseHost = host.startsWith("www.") ? host.slice(4) : host;
+
+  if (baseHost && !baseHost.includes("localhost")) {
+    const parts = baseHost.split(".").filter(Boolean);
+    if (parts.length >= 3) {
+      const tenantSlug = parts[0];
+      return <MerchantStorefrontView slug={tenantSlug} />;
+    }
+  }
+
+  redirect("/m");
 }

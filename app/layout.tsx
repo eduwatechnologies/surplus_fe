@@ -32,12 +32,12 @@ export const metadata: Metadata = {
   icons: {
     icon: "/images/logo.png",
   },
-  metadataBase: new URL("https://www.almaleek.com.ng/"),
+  metadataBase: new URL("https://www.surplus.ng/"),
   openGraph: {
     title: "Surplus – Instant VTU Recharge, Bills & More",
     description:
       "Fast, reliable and affordable virtual top-up (VTU) services including airtime, data, electricity, education and TV subscriptions.",
-    url: "https://www.almaleek.com.ng/",
+    url: "https://www.surplus.ng/",
     siteName: "Surplus TopUp",
     type: "website",
     locale: "en_NG",

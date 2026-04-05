@@ -136,7 +136,7 @@ export default function HistoryPage() {
 
   return (
     <div>
-      <ApHomeHeader />
+      {/* <ApHomeHeader /> */}
       <div className="min-h-screen bg-gray-100">
         {/* Search + Filter Bar */}
         <div className="sticky top-0 z-20 bg-white shadow-sm px-3 py-2 flex items-center gap-2">

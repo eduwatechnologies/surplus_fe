@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Formik, Form } from "formik";
+import React, { useEffect, useMemo, useState } from "react";
+import { Form, Formik } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -10,17 +10,33 @@ import { useRouter } from "next/navigation";
 import { ApTextInput } from "@/components/input/textInput";
 import { ApButton } from "@/components/button/button";
 import ApHeader from "@/components/Apheader";
-import GlobalModal from "@/components/modal/globalModal";
 
 import {
   purchaseData,
   fetchDataPlans,
-  fetchDataCategories,
   getDataServices,
 } from "@/redux/features/easyAccess/service";
 import { AppDispatch, RootState } from "@/redux/store";
 
-type Step = "categories" | "plans";
+const durationTabs = ["All", "Daily", "Weekly", "Monthly"] as const;
+type DurationTab = (typeof durationTabs)[number];
+
+const getDurationCategory = (validity?: string): DurationTab => {
+  const val = (validity || "").toLowerCase();
+  const days = parseInt(val);
+
+  if (val.includes("daily")) return "Daily";
+  if (val.includes("weekly")) return "Weekly";
+  if (val.includes("month")) return "Monthly";
+
+  if (!Number.isNaN(days)) {
+    if (days < 7) return "Daily";
+    if (days < 30) return "Weekly";
+    return "Monthly";
+  }
+
+  return "Monthly";
+};
 
 export default function EasyAccessBuyData() {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,43 +47,44 @@ export default function EasyAccessBuyData() {
     (state: RootState) => state.easyAccessdataPlans.plans
   );
 
-  // Select the list of data services from redux
   const dataServices = useSelector(
     (state: RootState) => state.easyAccessdataPlans.dataServices
   );
 
-  const purchaseError = useSelector(
-    (state: RootState) => state.easyAccessdataPlans.purchaseError
-  );
-
-  React.useEffect(() => {
-    dispatch(getDataServices("data"));
-  }, [dispatch]);
-
-  // UI States
   const [selectedNetwork, setSelectedNetwork] = useState<string>("");
-  const [categories, setCategories] = useState<string[]>([]);
-  const [step, setStep] = useState<Step>("categories");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pinModalOpen, setPinModalOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<DurationTab>("All");
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
-
-  // Input & form states
+  const [pinModalOpen, setPinModalOpen] = useState(false);
   const [formData, setFormData] = useState<any>(null);
   const [pinCode, setPinCode] = useState("");
   const [loading, setLoading] = useState(false);
 
-  /** Format helper */
-  const formatText = (text: string) =>
-    text
-      .replace(/^(mtn_|glo_|airtel_|9mobile_)/i, "")
-      .replaceAll("_", " ")
-      .split(" ")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
+  useEffect(() => {
+    dispatch(getDataServices("data"));
+  }, [dispatch]);
 
-  /** Validation schema */
+  useEffect(() => {
+    if (selectedNetwork) return;
+    if (!dataServices.length) return;
+
+    const enabled = dataServices.filter((s: any) => s?.status !== false);
+    const mtn =
+      enabled.find(
+        (s: any) => String(s?.name || "").split(" ")[0].toLowerCase() === "mtn"
+      ) || enabled[0];
+
+    if (!mtn) return;
+
+    const provider = String(mtn.name || "").split(" ")[0].toLowerCase();
+    if (!provider) return;
+
+    setSelectedNetwork(provider);
+    setSelectedPlan(null);
+    setActiveTab("All");
+
+    dispatch(fetchDataPlans({ network: provider }));
+  }, [dataServices, dispatch, selectedNetwork]);
+
   const validationSchema = Yup.object({
     phone: Yup.string()
       .matches(/^[0-9]{11}$/, "Phone number must be 11 digits")
@@ -79,67 +96,52 @@ export default function EasyAccessBuyData() {
     network: Yup.string().required("Network is required"),
   });
 
-  /** Handle selecting a network */
-  const handleNetworkSelect = async (
-    networkLabel: string,
-    setFieldValue: any,
-    networkValue: string,
-    service: string
-  ) => {
-    setSelectedService(service); // save the whole object
-    setSelectedNetwork(networkLabel);
-    setIsModalOpen(true);
-    setStep("categories");
-    setFieldValue("network", networkValue);
+  const initialValues = useMemo(
+    () => ({
+      phone: "",
+      planId: "",
+      amount: "",
+      network: selectedNetwork || "",
+      dataName: "",
+    }),
+    [selectedNetwork]
+  );
 
-    try {
-      const result = await dispatch(
-        fetchDataCategories({ network: networkLabel, serviceType: "data" })
+  const sortedPlans = useMemo(() => {
+    return [...(plans || [])]
+      .filter(
+        (p: any) =>
+          p?.serviceType?.toLowerCase() === "data" &&
+          p?.validity &&
+          p?.name
+      )
+      .sort(
+        (a: any, b: any) =>
+          Number(a.ourPrice ?? a.amount ?? 0) -
+          Number(b.ourPrice ?? b.amount ?? 0)
       );
-      if (fetchDataCategories.fulfilled.match(result)) {
-        setCategories(result.payload || []);
-      } else {
-        toast.error("Could not load categories");
-      }
-    } catch {
-      toast.error("Failed to load categories");
-    }
-  };
+  }, [plans]);
 
-  /** Handle selecting a category */
-  const handleCategorySelect = async (category: string) => {
-    try {
-      const result = await dispatch(
-        fetchDataPlans({ network: selectedNetwork, category })
-      );
-      if (fetchDataPlans.fulfilled.match(result)) {
-        setStep("plans");
-      } else {
-        toast.error(result.payload || "Failed to fetch plans");
-      }
-    } catch {
-      toast.error("Unexpected error while fetching plans");
-    }
-  };
+  const visiblePlans = useMemo(() => {
+    if (activeTab === "All") return sortedPlans;
+    return sortedPlans.filter(
+      (p: any) => getDurationCategory(p.validity) === activeTab
+    );
+  }, [activeTab, sortedPlans]);
 
-  /** Handle selecting a plan */
-  const handlePlanSelect = (plan: any, setFieldValue: any) => {
-    // setFieldValue("pl")
-    setFieldValue("amount", plan.ourPrice);
-    setFieldValue("dataName", plan.name);
-    setIsModalOpen(false);
-    setSelectedPlan(plan);
-  };
-
-  /** Handle submitting purchase */
   const handleFormSubmit = async (values: any) => {
     if (!pinCode || pinCode.length !== 4) {
       toast.error("Please enter a valid 4-digit PIN");
       return;
     }
 
-    if (!selectedService) {
+    if (!selectedNetwork) {
       toast.error("No network selected");
+      return;
+    }
+
+    if (!selectedPlan) {
+      toast.error("No plan selected");
       return;
     }
 
@@ -189,56 +191,64 @@ export default function EasyAccessBuyData() {
             Select your network and plan, enter your number, and complete with
             your PIN.
           </p>
+
           <Formik
-            initialValues={{ phone: "", planId: "", amount: "", network: "" }}
+            initialValues={initialValues}
             validationSchema={validationSchema}
             onSubmit={() => {}}
+            enableReinitialize
           >
             {({ values, setFieldValue }) => (
               <Form>
-                {/* NETWORK SELECTION */}
                 <div className="grid grid-cols-4 gap-4 mb-4">
                   {dataServices.map((service: any) => {
-                    const isDisabled = service.status === false; // false means unclickable
+                    const isDisabled = service.status === false;
+                    if (isDisabled) return null;
+
+                    const provider = String(service.name || "")
+                      .split(" ")[0]
+                      .toLowerCase();
 
                     return (
                       <button
                         key={service._id}
                         type="button"
-                        disabled={isDisabled}
-                        className={`flex items-center justify-center p-3 border-2 rounded-xl transition
-          ${
-            selectedNetwork === service.name
-              ? "border-blue-500"
-              : "border-gray-200"
-          }
-          ${
-            isDisabled
-              ? "hidden cursor-not-allowed opacity-50"
-              : "hover:border-blue-400"
-          }
-        `}
-                        onClick={() => {
-                          if (isDisabled) return; // Prevent click
-                          const provider = service.name
-                            .split(" ")[0]
-                            .toLowerCase();
-                          handleNetworkSelect(
-                            provider,
-                            setFieldValue,
-                            provider,
-                            service
-                          );
+                        className={`flex items-center justify-center p-3 border-2 rounded-xl transition ${
+                          selectedNetwork === provider
+                            ? "border-blue-500"
+                            : "border-gray-200"
+                        } hover:border-blue-400`}
+                        onClick={async () => {
+                          setSelectedNetwork(provider);
+                          setSelectedPlan(null);
+                          setActiveTab("All");
+                          setFieldValue("network", provider);
+                          setFieldValue("planId", "");
+                          setFieldValue("dataName", "");
+                          setFieldValue("amount", "");
+
+                          try {
+                            const result = await dispatch(
+                              fetchDataPlans({
+                                network: provider,
+                              })
+                            );
+                            if (!fetchDataPlans.fulfilled.match(result)) {
+                              toast.error(
+                                result.payload || "Failed to fetch plans"
+                              );
+                            }
+                          } catch {
+                            toast.error(
+                              "Unexpected error while fetching plans"
+                            );
+                          }
                         }}
                       >
                         <img
                           src={service.image}
                           alt={service.name}
                           className="w-10 h-10 object-contain"
-                          style={{
-                            pointerEvents: isDisabled ? "none" : "auto",
-                            opacity: isDisabled ? 0.5 : 1,
-                          }}
                         />
                       </button>
                     );
@@ -252,33 +262,99 @@ export default function EasyAccessBuyData() {
                   placeHolder="Enter phone number"
                 />
 
-                <ApTextInput
-                  label="Data Plan"
-                  name="dataName"
-                  readOnly={true}
-                  type="text"
-                  placeHolder="Enter phone number"
-                />
+                <div className="mt-4">
+                  <div className="flex gap-6 overflow-x-auto border-b border-gray-200">
+                    {durationTabs.map((tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveTab(tab)}
+                        className="pb-2"
+                      >
+                        <span
+                          className={`text-sm ${
+                            activeTab === tab
+                              ? "text-green-600 font-bold"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {tab}
+                        </span>
+                        {activeTab === tab ? (
+                          <div className="h-1 bg-green-600 mt-2 rounded-full" />
+                        ) : null}
+                      </button>
+                    ))}
+                  </div>
 
-                <ApTextInput
-                  label="Amount (₦)"
-                  name="amount"
-                  readOnly={true}
-                  placeHolder="e.g. 500"
-                />
+                  <div className="mt-3 max-h-[46vh] overflow-y-auto pr-1 custom-scrollbar overscroll-contain">
+                    <div className="grid grid-cols-3 gap-3">
+                      {visiblePlans.map((p: any, i: number) => {
+                        const isActive = selectedPlan?._id === p?._id;
+                        const sizeText =
+                          String(p.name || "")
+                            .match(/\d+(?:\.\d+)?\s*(GB|MB)/i)?.[0]
+                            ?.replace(/\s+/g, "")
+                            .toUpperCase() || p.name;
 
-                <ApButton
-                  title="Continue"
-                  className="w-full mt-4"
-                  disabled={loading}
-                  type="button"
-                  onClick={() => {
-                    setFormData(values);
-                    setPinModalOpen(true);
-                  }}
-                />
+                        return (
+                          <button
+                            key={p?._id || i}
+                            type="button"
+                            className={`text-left bg-gray-50 border rounded-2xl p-4 transition ${
+                              isActive
+                                ? "border-blue-500"
+                                : "border-gray-200 hover:border-blue-300"
+                            }`}
+                            onClick={() => {
+                              if (!/^\d{11}$/.test(values.phone || "")) {
+                                toast.error(
+                                  "Enter a valid 11-digit phone number"
+                                );
+                                return;
+                              }
 
-                {/* PIN MODAL */}
+                              setSelectedPlan(p);
+                              setFieldValue("planId", p._id);
+                              setFieldValue("dataName", p.name);
+                              setFieldValue("amount", p.ourPrice);
+                              setFormData({
+                                ...values,
+                                planId: p._id,
+                                dataName: p.name,
+                                amount: p.ourPrice,
+                                network: selectedNetwork,
+                              });
+                              setPinCode("");
+                              setPinModalOpen(true);
+                            }}
+                          >
+                            <div className="flex flex-col items-center justify-center text-center gap-2">
+                              <div className="text-base font-semibold">
+                                {sizeText}
+                              </div>
+                              <div className="inline-flex items-center justify-center bg-green-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+                                {p.validity}
+                              </div>
+                              <div className="text-green-600 font-semibold whitespace-nowrap">
+                                ₦{Number(p.ourPrice ?? 0).toLocaleString()}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+
+                      {!visiblePlans.length ? (
+                        <div className="col-span-3 py-6 text-center text-sm text-gray-500">
+                          {selectedNetwork
+                            ? "No plans found for this tab."
+                            : "Select a network to see plans."}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
                 {pinModalOpen && (
                   <div
                     className="fixed inset-0 bg-black/40 flex items-center justify-center"
@@ -323,47 +399,6 @@ export default function EasyAccessBuyData() {
                     </div>
                   </div>
                 )}
-
-                {/* MODAL FOR CATEGORIES & PLANS */}
-                <GlobalModal
-                  title={`Choose Plan (${selectedNetwork})`}
-                  isOpen={isModalOpen}
-                  onClose={() => setIsModalOpen(false)}
-                >
-                  <div className="max-h-[60vh] overflow-y-auto">
-                    {step === "categories" ? (
-                      <div className="space-y-2">
-                        {categories.map((c, i) => (
-                          <button
-                            key={i}
-                            onClick={() => handleCategorySelect(c)}
-                            className="w-full px-4 py-3 bg-gray-100 rounded-lg hover:bg-blue-50"
-                          >
-                            {formatText(c)}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <button
-                          onClick={() => setStep("categories")}
-                          className="text-blue-500 text-sm mb-2"
-                        >
-                          ← Back
-                        </button>
-                        {plans.map((p, i) => (
-                          <button
-                            key={i}
-                            onClick={() => handlePlanSelect(p, setFieldValue)}
-                            className="w-full px-4 py-3 bg-gray-100 rounded-lg hover:bg-blue-50"
-                          >
-                            {p.name} — ₦{p.ourPrice}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </GlobalModal>
               </Form>
             )}
           </Formik>
