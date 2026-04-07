@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.7.0",
+    "@serwist/next": "^9.5.7",
     "axios": "^1.8.4",
     "classnames": "^2.5.1",
     "formik": "^2.4.6",
@@ -24,6 +25,7 @@
     "react-redux": "^9.2.0",
     "react-toastify": "^11.0.5",
     "redux-persist": "^6.0.0",
+    "serwist": "^9.5.7",
     "yup": "^1.6.1"
   },
   "devDependencies": {

@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ClientProviders } from "./clientProvider";
 import Script from "next/script";
 
 export const metadata: Metadata = {
+  applicationName: "Surplus TopUp",
   title: "Surplus TopUp – Instant VTU Recharge, Bills & More",
   description:
     "Surplus TopUp offers fast and affordable airtime, data recharge, bill payments, and more. Enjoy seamless VTU services across Nigeria.",
@@ -18,8 +19,18 @@ export const metadata: Metadata = {
     "Affordable VTU",
     "Recharge Cards",
   ],
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/images/logo.png",
+    apple: "/images/logo.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Surplus TopUp",
+  },
+  formatDetection: {
+    telephone: false,
   },
   metadataBase: new URL("https://www.surplus.ng/"),
   openGraph: {
@@ -31,6 +42,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_NG",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
