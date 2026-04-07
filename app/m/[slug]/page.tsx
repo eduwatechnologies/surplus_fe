@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { ArrowRight, CheckCircle, Clock, Shield, Smartphone, Wifi, Zap } from "lucide-react";
@@ -581,19 +580,6 @@ export default async function MerchantStorefront({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-
-  const h = await headers();
-  const rawHost = (h.get("x-forwarded-host") || h.get("host") || "").trim();
-  const host = rawHost.split(",")[0].split(":")[0].toLowerCase();
-  const proto = (h.get("x-forwarded-proto") || "https").trim();
-  const normalizedSlug = String(slug || "").trim().toLowerCase();
-
-  if (host && !host.includes("localhost")) {
-    const baseHost = host.startsWith("www.") ? host.slice(4) : host;
-    const alreadyOnSubdomain = baseHost.startsWith(`${normalizedSlug}.`);
-    const targetHost = alreadyOnSubdomain ? baseHost : `${normalizedSlug}.${baseHost}`;
-    redirect(`${proto}://${targetHost}/`);
-  }
 
   return <MerchantStorefrontView slug={slug} />;
 }
