@@ -38,31 +38,39 @@ function TransactionContent() {
       return {
         label: "SUCCESS",
         title: "Transaction successful",
-        icon: <CheckCircle size={40} className="text-emerald-600" />,
+        icon: <CheckCircle size={44} className="text-white" />,
         pill: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+        from: "#059669",
+        to: "#065f46",
       };
     }
     if (status === "failed") {
       return {
         label: "FAILED",
         title: "Transaction failed",
-        icon: <XCircle size={40} className="text-rose-600" />,
+        icon: <XCircle size={44} className="text-white" />,
         pill: "bg-rose-50 text-rose-700 ring-1 ring-rose-100",
+        from: "#e11d48",
+        to: "#9f1239",
       };
     }
     if (status === "refund" || status === "refunded") {
       return {
         label: "REFUNDED",
         title: "Transaction refunded",
-        icon: <CheckCircle size={40} className="text-[color:var(--brand-700)]" />,
+        icon: <CheckCircle size={44} className="text-white" />,
         pill: "bg-[color:var(--brand-50)] text-[color:var(--brand-700)] ring-1 ring-[color:var(--brand-100)]",
+        from: "var(--brand-600)",
+        to: "var(--brand-700)",
       };
     }
     return {
       label: "PENDING",
       title: "Transaction pending",
-      icon: <Clock size={40} className="text-amber-600" />,
+      icon: <Clock size={44} className="text-white" />,
       pill: "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
+      from: "#f59e0b",
+      to: "#b45309",
     };
   };
 
@@ -168,77 +176,74 @@ function TransactionContent() {
       : "N/A";
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="pb-24">
       <ApHeader title="Transaction Details" />
 
       <div className="mx-auto w-full max-w-md px-4 pt-6" ref={receiptRef}>
-        <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-100 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
+        <div
+          className="relative overflow-hidden rounded-3xl p-6 text-white shadow-lg ring-1 ring-white/10"
+          style={{
+            background: `linear-gradient(135deg, ${statusUi.from}, ${statusUi.to})`,
+          }}
+        >
+          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-white/12 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-14 h-52 w-52 rounded-full bg-black/20 blur-2xl" />
+
+          <div className="relative flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/20">
                 {statusUi.icon}
               </div>
-              <div>
-                <div
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusUi.pill}`}
-                >
+              <div className="min-w-0">
+                <div className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
                   {statusUi.label}
                 </div>
-                <div className="mt-2 text-base font-semibold text-slate-900">
-                  {statusUi.title}
-                </div>
+                <div className="mt-2 text-base font-semibold">{statusUi.title}</div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-slate-500">Amount</div>
-              <div className="text-lg font-extrabold text-[color:var(--brand-700)]">
-                {amountText}
-              </div>
+              <div className="text-xs text-white/80">Amount</div>
+              <div className="mt-1 text-2xl font-extrabold tracking-tight">{amountText}</div>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 capitalize">
+          <div className="relative mt-4 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold capitalize">
               {serviceLabel}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+              {dateText}
             </span>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl bg-white p-6 ring-1 ring-slate-100 shadow-sm space-y-3">
-          <RenderTrans
-            title="Transaction ID"
-            name={transaction?._id || requestId || "N/A"}
-          />
-          <RenderTrans
-            title="Reference"
-            name={
-              transaction?.client_reference || transaction?.reference_no || "N/A"
-            }
-          />
-          <RenderTrans title="Date" name={dateText} />
+        <div className="mt-4 rounded-2xl bg-white/80 p-6 ring-1 ring-slate-100 shadow-sm backdrop-blur space-y-3">
+          <div className="text-sm font-semibold text-slate-900">Summary</div>
+          <RenderTrans title="Transaction ID" name={transaction?._id || requestId || "N/A"} />
+          <RenderTrans title="Reference" name={transaction?.client_reference || transaction?.reference_no || "N/A"} />
         </div>
 
-        <div className="mt-4 rounded-2xl bg-white p-6 ring-1 ring-slate-100 shadow-sm space-y-3">
-          <div className="text-sm font-semibold text-slate-900">
-            Service details
-          </div>
-          {renderServiceFields() || (
-            <div className="text-xs text-slate-500">No extra details.</div>
-          )}
+        <div className="mt-4 rounded-2xl bg-white/80 p-6 ring-1 ring-slate-100 shadow-sm backdrop-blur space-y-3">
+          <div className="text-sm font-semibold text-slate-900">Service details</div>
+          {renderServiceFields() || <div className="text-xs text-slate-500">No extra details.</div>}
         </div>
 
-        <div className="mt-4 rounded-2xl bg-white p-6 ring-1 ring-slate-100 shadow-sm space-y-3">
-          <div className="text-sm font-semibold text-slate-900">
-            Wallet impact
+        <div className="mt-4 rounded-2xl bg-white/80 p-6 ring-1 ring-slate-100 shadow-sm backdrop-blur space-y-3">
+          <div className="text-sm font-semibold text-slate-900">Wallet impact</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <div className="text-xs text-slate-500">Previous</div>
+              <div className="mt-1 text-sm font-semibold text-slate-900">
+                ₦{Number(transaction?.previous_balance ?? 0).toLocaleString()}
+              </div>
+            </div>
+            <div className="rounded-2xl bg-[color:var(--brand-50)] p-4 ring-1 ring-[color:var(--brand-100)]">
+              <div className="text-xs text-[color:var(--brand-700)]">New</div>
+              <div className="mt-1 text-sm font-semibold text-[color:var(--brand-700)]">
+                ₦{Number(transaction?.new_balance ?? 0).toLocaleString()}
+              </div>
+            </div>
           </div>
-          <RenderTrans
-            title="Previous Balance"
-            name={`₦${Number(transaction?.previous_balance ?? 0).toLocaleString()}`}
-          />
-          <RenderTrans
-            title="New Balance"
-            name={`₦${Number(transaction?.new_balance ?? 0).toLocaleString()}`}
-          />
         </div>
       </div>
     </div>

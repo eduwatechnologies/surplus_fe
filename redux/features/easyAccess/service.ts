@@ -162,7 +162,7 @@ export const purchaseData = createAsyncThunk<
 
     return rejectWithValue({
       message: errorData?.message || "Purchase failed",
-      error: errorData.error,
+      error: errorData?.error || errorData?.message || "Purchase failed",
       transactionId: errorData?.transactionId || "",
       transaction: errorData?.transaction || null,
       success: errorData?.success,

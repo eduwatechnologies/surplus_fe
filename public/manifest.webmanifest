@@ -2,7 +2,7 @@
   "name": "Surplus TopUp",
   "short_name": "Surplus",
   "description": "Surplus TopUp offers fast and affordable airtime, data recharge, bill payments, and more.",
-  "start_url": "/auth/login",
+  "start_url": "/auth/signin",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",

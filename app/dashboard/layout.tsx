@@ -3,7 +3,9 @@ import { BottomNav } from "@/components/bottomNav";
 import IdleLogout from "@/components/idleLogout";
 import { fetchTenantContext } from "@/redux/features/user/userThunk";
 import { AppDispatch, RootState } from "@/redux/store";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Bell, MessageCircle } from "lucide-react";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -13,8 +15,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useDispatch<AppDispatch>();
   const tenantContext = useSelector((state: RootState) => state.auth.tenantContext);
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const applyBrand = (primaryColor: string | null | undefined) => {
     const c = String(primaryColor || "").trim();
@@ -79,23 +83,69 @@ export default function DashboardLayout({
   return (
     <IdleLogout>
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-[color:var(--brand-50)] to-blue-50 w-full max-w-[420px] mx-auto shadow-lg border">
-        {tenantContext?.brandName || tenantContext?.logoUrl ? (
-          <div className="px-6 pt-6 pb-3 flex items-center gap-3">
-            {tenantContext?.logoUrl ? (
-              <img
-                src={tenantContext.logoUrl}
-                alt={tenantContext.brandName || "Merchant"}
-                className="w-9 h-9 rounded-md object-contain bg-white border"
-              />
-            ) : null}
-            {tenantContext?.brandName ? (
-              <div className="text-sm font-semibold text-gray-900">
-                {tenantContext.brandName}
-              </div>
-            ) : null}
+        <div className="px-6 pt-6 pb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img
+              src={tenantContext?.logoUrl || "/images/logo.png"}
+              alt={tenantContext?.brandName || "Surplus TopUp"}
+              className="w-9 h-9 rounded-md object-contain bg-white border"
+            />
+            <div className="leading-tight">
+              {tenantContext?.brandName ? (
+                <div className="text-sm font-semibold text-gray-900">{tenantContext.brandName}</div>
+              ) : (
+                <div className="text-sm font-semibold text-gray-900">Surplus TopUp</div>
+              )}
+              <div className="text-xs text-gray-600">Hi{user?.firstName ? `, ${user.firstName}` : ""}</div>
+            </div>
           </div>
-        ) : null}
+          <Link
+            href="/dashboard/notification"
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-white border hover:bg-gray-50"
+            aria-label="Notifications"
+          >
+            <Bell className="h-5 w-5 text-gray-700" />
+          </Link>
+        </div>
         <main className="flex-1 p-6 pt-3">{children}</main>
+        {(() => {
+          const showWhatsApp = pathname?.startsWith("/dashboard");
+          const digits = String(tenantContext?.supportPhone || "").replace(/\D/g, "");
+          const def = "2348063249490";
+          const normalized =
+            digits && digits.length >= 10
+              ? digits.startsWith("0") && digits.length === 11
+                ? `234${digits.slice(1)}`
+                : digits.startsWith("234")
+                ? digits
+                : digits
+              : def;
+          const encodedText = encodeURIComponent(
+            `Hello ${tenantContext?.brandName || "Support"}, I need assistance with my account.`
+          );
+          const href = `https://wa.me/${normalized}?text=${encodedText}`;
+          if (!showWhatsApp) return null;
+          return (
+            <div className="fixed bottom-20 right-6 z-40">
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-12 w-12 items-center justify-center rounded-full shadow-lg ring-1 ring-black/10 transition hover:opacity-95"
+                style={{ backgroundColor: "#25D366" }}
+                aria-label="WhatsApp"
+              >
+                <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
+                  <circle cx="16" cy="16" r="16" fill="#25D366" />
+                  <path
+                    d="M23.6 8.4A10.2 10.2 0 0 0 6.9 23.5L6 26l2.6-.8a10.2 10.2 0 0 0 15-8.9 10.1 10.1 0 0 0-0.1-7.9Zm-7.6 16.1a8.5 8.5 0 0 1-4.3-1.2l-.3-.2-2.5.7.7-2.4-.2-.3a8.5 8.5 0 1 1 6.6 3.4Zm4.8-6.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1-.8 1-1 1.2-.4.2-.7.1a6.9 6.9 0 0 1-2-1.2 7.6 7.6 0 0 1-1.4-1.8c-.1-.3 0-.5.1-.6s.3-.3.4-.5.3-.3.4-.6 0-.5 0-.6 0-.4-.2-.6-.7-1.8-1-2.4-.6-.6-.8-.6h-.6a1.1 1.1 0 0 0-.8.4 3.2 3.2 0 0 0-1 2.3 5.6 5.6 0 0 0 1.2 2.9 12.8 12.8 0 0 0 4.9 4.7 5.7 5.7 0 0 0 2.8.9 2.8 2.8 0 0 0 1.9-.9 2.4 2.4 0 0 0 .4-1.6c0-.1 0-.2-.1-.3s-.2-.2-.5-.3Z"
+                    fill="#fff"
+                  />
+                </svg>
+              </a>
+            </div>
+          );
+        })()}
         <BottomNav />
       </div>
     </IdleLogout>
